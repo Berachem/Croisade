@@ -41,6 +41,8 @@ pygame.mouse.set_visible(True)
 
 # Load images
 fond = pygame.image.load(os.path.join(assets, "map.png"))
+decor_largeur = fond.get_width()
+decor_hauteur = fond.get_height()
 sprite_bandit = pygame.image.load(os.path.join(assets, "bandit_rue.png"))
 sprite_viseur = pygame.image.load(os.path.join(assets, "viseur.png"))
 sprite_viseur_width = sprite_viseur.get_width()
@@ -57,23 +59,24 @@ repere_E_y = centre_eglise_y - screenHeight // 2
 # Calcul des coordonnées du bandit (S) par rapport à la zone de la carte à afficher
 bandit_offset_x = -125
 bandit_offset_y = -25
-
 bandit_x = centre_eglise_x + bandit_offset_x
 bandit_y = centre_eglise_y + bandit_offset_y
 
-bandit_screen_x = bandit_x - repere_E_x
-bandit_screen_y = bandit_y - repere_E_y
-
-#  Calcul des coordonnées du point V pour que le viseur soit au milieu de la fenêtre
 viseur_x = screeenWidth // 2
 viseur_y = screenHeight // 2
+viseur_vitesse = 3
 
-viseur_vitesse = 5
- 
-def deplacer_viseur(viseur_x, viseur_y, vitesse, repere_E_x, repere_E_y, screenWidth, screenHeight, sprite_viseur_width, sprite_viseur_height):
+zone_orange_largeur = screeenWidth // 3
+zone_orange_hauteur = screenHeight // 3
+zone_orange_x = (screeenWidth - zone_orange_largeur) // 2
+zone_orange_y = (screenHeight - zone_orange_hauteur) // 2
+
+# Taille et limites du décor
+decor_largeur = fond.get_width()
+decor_hauteur = fond.get_height()
+
+def deplacer_viseur(viseur_x, viseur_y, vitesse, screenWidth, screenHeight, sprite_viseur_width, sprite_viseur_height):
     keys = pygame.key.get_pressed()
-    
-    # Déplacement potentiel
     if keys[pygame.K_UP]:
         viseur_y -= vitesse
     if keys[pygame.K_DOWN]:
@@ -83,67 +86,60 @@ def deplacer_viseur(viseur_x, viseur_y, vitesse, repere_E_x, repere_E_y, screenW
     if keys[pygame.K_RIGHT]:
         viseur_x += vitesse
 
-    # Limite gauche 
+    # Limite gauche
     if viseur_x < sprite_viseur_width // 2:
         viseur_x = sprite_viseur_width // 2
-    # Limite droite 
+    # Limite droite
     if viseur_x > screenWidth - sprite_viseur_width // 2:
         viseur_x = screenWidth - sprite_viseur_width // 2
-    
-    # Limite haute 
+
+    # Limite haute
     if viseur_y < sprite_viseur_height // 2:
         viseur_y = sprite_viseur_height // 2
-    # Limite basse 
+    # Limite basse
     if viseur_y > screenHeight - sprite_viseur_height // 2:
         viseur_y = screenHeight - sprite_viseur_height // 2
 
     return viseur_x, viseur_y
- 
- 
 
- 
- 
+def ajuster_repere_E(viseur_x, viseur_y, repere_E_x, repere_E_y, screenWidth, screenHeight, zone_orange_x, zone_orange_y, zone_orange_largeur, zone_orange_hauteur, decor_largeur, decor_hauteur):
+    # Déplacement du repère E si nécessaire
+    if viseur_x < zone_orange_x:
+        repere_E_x -= zone_orange_x - viseur_x
+    elif viseur_x > zone_orange_x + zone_orange_largeur:
+        repere_E_x += viseur_x - (zone_orange_x + zone_orange_largeur)
 
- 
- 
- 
-# -------- Main Program Loop -----------
+    if viseur_y < zone_orange_y:
+        repere_E_y -= zone_orange_y - viseur_y
+    elif viseur_y > zone_orange_y + zone_orange_hauteur:
+        repere_E_y += viseur_y - (zone_orange_y + zone_orange_hauteur)
+
+    # Assurez-vous que E ne dépasse pas les limites du décor
+    repere_E_x = max(0, min(repere_E_x, decor_largeur - screenWidth))
+    repere_E_y = max(0, min(repere_E_y, decor_hauteur - screenHeight))
+
+    return repere_E_x, repere_E_y
+
+done = False
+clock = pygame.time.Clock()
+
 while not done:
-   event = pygame.event.Event(pygame.USEREVENT)    # Remise à zero de la variable event
-   
-   # récupère la liste des touches claviers appuyeées sous la forme liste bool
-   pygame.event.pump()
-   
-   for event in pygame.event.get():
-      if event.type == pygame.QUIT:
-         done = True
-      
-   
-    # LOGIQUE
- 
- 
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            done = True
 
- 
-    # DESSIN
-    
-   # Calcule le rectangle représentant la zone de la carte à afficher
-   zone_de_vue = pygame.Rect(repere_E_x, repere_E_y, screeenWidth, screenHeight)
-   
-   screen.blit(fond, (0, 0), area=zone_de_vue) # affiche la zone de la carte à afficher
-   screen.blit(sprite_bandit, (bandit_screen_x, bandit_screen_y)) # affiche le bandit
-   
-   viseur_x, viseur_y = deplacer_viseur(viseur_x, viseur_y, viseur_vitesse, repere_E_x, repere_E_y, screeenWidth, screenHeight, sprite_viseur_width, sprite_viseur_height)
-   viseur_screen_x = viseur_x - sprite_viseur.get_width() // 2
-   viseur_screen_y = viseur_y - sprite_viseur.get_height() // 2
-   screen.blit(sprite_viseur, (viseur_screen_x, viseur_screen_y)) # affiche le viseur
-   
-   
-  
-    # Go ahead and update the screen with what we've drawn.
-   pygame.display.flip()
- 
-    # Limit frames per second
-   clock.tick(30)
- 
-# Close the window and quit.
+    viseur_x, viseur_y = deplacer_viseur(viseur_x, viseur_y, viseur_vitesse, screeenWidth, screenHeight, sprite_viseur_width, sprite_viseur_height)
+    repere_E_x, repere_E_y = ajuster_repere_E(viseur_x, viseur_y, repere_E_x, repere_E_y, screeenWidth, screenHeight, zone_orange_x, zone_orange_y, zone_orange_largeur, zone_orange_hauteur, decor_largeur, decor_hauteur)
+
+    # Calcule et affiche les éléments
+    zone_de_vue = pygame.Rect(repere_E_x, repere_E_y, screeenWidth, screenHeight)
+    screen.blit(fond, (0, 0), area=zone_de_vue)
+    bandit_screen_x = bandit_x - repere_E_x
+    bandit_screen_y = bandit_y - repere_E_y
+    screen.blit(sprite_bandit, (bandit_screen_x, bandit_screen_y))
+    screen.blit(sprite_viseur, (viseur_x - sprite_viseur_width // 2, viseur_y - sprite_viseur_height // 2))
+
+    pygame.display.flip()
+    clock.tick(30)
+
 pygame.quit()
