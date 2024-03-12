@@ -1,6 +1,7 @@
 import pygame
 import os, inspect
 from pygame.transform import scale
+import random
 
 #recherche du répertoire de travail
 scriptPATH = os.path.abspath(inspect.getsourcefile(lambda:0)) # compatible interactive Python Shell
@@ -43,7 +44,6 @@ pygame.mouse.set_visible(True)
 fond = pygame.image.load(os.path.join(assets, "map.png"))
 decor_largeur = fond.get_width()
 decor_hauteur = fond.get_height()
-sprite_bandit = pygame.image.load(os.path.join(assets, "bandit_rue.png"))
 sprite_viseur = pygame.image.load(os.path.join(assets, "viseur.png"))
 sprite_viseur_width = sprite_viseur.get_width()
 sprite_viseur_height = sprite_viseur.get_height()
@@ -57,14 +57,11 @@ repere_E_x = centre_eglise_x - screeenWidth // 2
 repere_E_y = centre_eglise_y - screenHeight // 2
 
 # Calcul des coordonnées du bandit (S) par rapport à la zone de la carte à afficher
-bandit_offset_x = -125
-bandit_offset_y = -25
-bandit_x = centre_eglise_x + bandit_offset_x
-bandit_y = centre_eglise_y + bandit_offset_y
+bandit_x, bandit_y = None, None
 
 viseur_x = screeenWidth // 2
 viseur_y = screenHeight // 2
-viseur_vitesse = 3
+viseur_vitesse = 5
 
 zone_orange_largeur = screeenWidth // 3
 zone_orange_hauteur = screenHeight // 3
@@ -119,14 +116,52 @@ def ajuster_repere_E(viseur_x, viseur_y, repere_E_x, repere_E_y, screenWidth, sc
     repere_E_y = max(0, min(repere_E_y, decor_hauteur - screenHeight))
 
     return repere_E_x, repere_E_y
+ 
+def gerer_apparition_bandit(current_bandit_x, current_bandit_y, temps_actuel, T0, bandit_apparu, screenHeight, screenWidth, sprite_bandit, repere_E_x):
+    if temps_actuel - T0 >= 3 and not bandit_apparu:
+        # Choisissez une position x aléatoire pour le bandit relative à repere_E_x
+        bandit_x = repere_E_x + random.random() * screenWidth
+        # Assurez-vous que le bandit n'apparaît pas hors du décor
+        bandit_x = min(max(bandit_x, repere_E_x), repere_E_x + screenWidth - sprite_bandit.get_width())
+        # Fixez la position y du bandit pour qu'il apparaisse sur le trottoir, ajustée par rapport à repere_E_y
+        bandit_y = screenHeight - sprite_bandit.get_height() + repere_E_y  
+        print("Apparition du bandit en", bandit_x, bandit_y)
+        bandit_apparu = True
+    elif temps_actuel - T0 >= 3 and bandit_apparu:
+        bandit_x = current_bandit_x
+        bandit_y = current_bandit_y
+    else:
+        bandit_x, bandit_y =  None, None
+    return bandit_x, bandit_y, bandit_apparu
+
+def dessiner_bandit(screen, bandit_apparu, bandit_x, bandit_y, repere_E_x, repere_E_y, sprite_bandit):
+    if bandit_apparu and bandit_x is not None and bandit_y is not None:
+        # Calcule la position du bandit à l'écran après le scrolling
+        bandit_screen_x = bandit_x - repere_E_x
+        bandit_screen_y = bandit_y - repere_E_y
+        #print("E_x:", repere_E_x, "E_y:", repere_E_y, "Bandit_screen_x:", bandit_screen_x, "Bandit_screen_y:", bandit_screen_y)
+        
+        
+        # Affiche le bandit à sa position ajustée
+        screen.blit(sprite_bandit, (bandit_screen_x, bandit_screen_y))
+
 
 done = False
 clock = pygame.time.Clock()
+
+# Bandit
+T0 = int(pygame.time.get_ticks() / 1000)
+sprite_bandit = pygame.image.load(os.path.join(assets, "bandit_rue.png"))
+bandit_apparu = False
 
 while not done:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             done = True
+
+
+    temps_actuel = int(pygame.time.get_ticks() / 1000)
+    bandit_x, bandit_y, bandit_apparu = gerer_apparition_bandit( bandit_x, bandit_y,temps_actuel, T0, bandit_apparu,screenHeight, screeenWidth, sprite_bandit , repere_E_x)
 
     viseur_x, viseur_y = deplacer_viseur(viseur_x, viseur_y, viseur_vitesse, screeenWidth, screenHeight, sprite_viseur_width, sprite_viseur_height)
     repere_E_x, repere_E_y = ajuster_repere_E(viseur_x, viseur_y, repere_E_x, repere_E_y, screeenWidth, screenHeight, zone_orange_x, zone_orange_y, zone_orange_largeur, zone_orange_hauteur, decor_largeur, decor_hauteur)
@@ -134,9 +169,7 @@ while not done:
     # Calcule et affiche les éléments
     zone_de_vue = pygame.Rect(repere_E_x, repere_E_y, screeenWidth, screenHeight)
     screen.blit(fond, (0, 0), area=zone_de_vue)
-    bandit_screen_x = bandit_x - repere_E_x
-    bandit_screen_y = bandit_y - repere_E_y
-    screen.blit(sprite_bandit, (bandit_screen_x, bandit_screen_y))
+    dessiner_bandit(screen, bandit_apparu, bandit_x, bandit_y, repere_E_x, repere_E_y, sprite_bandit)
     screen.blit(sprite_viseur, (viseur_x - sprite_viseur_width // 2, viseur_y - sprite_viseur_height // 2))
 
     pygame.display.flip()
