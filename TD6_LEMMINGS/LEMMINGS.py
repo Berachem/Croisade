@@ -43,25 +43,37 @@ done = False
 # Used to manage how fast the screen updates
 clock = pygame.time.Clock()
 
+#couleurs
+BLACK = (0, 0, 0, 255)
+YELLOW = [255,255,0]
+RED   = [255, 0, 0]
+
+#police
+police = pygame.font.SysFont("Arial", 25)
+victory = police.render("VICTOIRE",YELLOW,BLACK)
+defeat = police.render("GAME OVER",RED,BLACK)
+
 # liste des etats
 EtatMarche = 100
 EtatChute  = 200
 EtatStop   = 300
 EtatDead   = 400
+EtatCreuse = 500
    
 # liste des lemmins en cours de jeu
 
 lemmingsLIST = []
 compteur_creation = 0
-
-#couleurs
-BLACK = (0, 0, 0, 255)
-YELLOW = [255,255,0]
+lemmingsAlive = []
+compteur_waiting_lemming = 0 #pour gérer la fin de jeu
 
 #utils
-lemmingHeight = 32
+lemmingHeight = 30
 lemmingWidth = 30
-selected_action = None
+sortieHeight = 75
+sortieWidth = 64
+sortieX = 600
+sortieY = 250
 
 #donnees geographiques actions
 bord_gauche = 190
@@ -69,6 +81,22 @@ bord_droit = 620
 bord_haut = 345
 difference = bord_droit - bord_gauche
 largeur_action = difference/9
+
+#données actions 
+actions = [ #A compléter, mis à 9 pour ne pas gérer les Out Of Bounds
+   EtatStop,
+   EtatCreuse,
+   None,
+   None,
+   None,
+   None,
+   None,
+   None,
+   None,
+]
+selected_rectangle = None
+selected_action = None
+
 
 #fonctions d'action
 def actionMarche(lemming) :
@@ -79,11 +107,18 @@ def actionChute(lemming) :
    lemming['fallcount'] += 3
  
 def actionStop(lemming) :
-   return #TODO
+   return 
 
 def actionMort(lemming) :
    if(lemming['deathCounter'] != 0):
       lemming['deathCounter']-=1
+   else:
+      lemmingsLIST.remove(lemming)
+
+def actionCreuse(lemming) :
+   for i in range(20) :
+      fond.set_at((lemming["x"] + i,lemming["y"] + lemmingHeight),BLACK)
+   lemming["y"]+=1
 
 #fonction de transition
 def transitionChute(lemming):
@@ -92,29 +127,69 @@ def transitionChute(lemming):
        if(lemming["fallcount"] >= 100):
           lemming["etat"] = EtatDead
        else:
+          lemming["fallcount"] = 0
           lemming["etat"] = EtatMarche
 
 def transitionMarche(lemming):
+
+   #colision sol
+
    #on  recentre le point au millieu des pied
    if(fond.get_at((lemming["x"] + int(lemmingWidth/2),lemming["y"] + lemmingHeight)) == BLACK):
       lemming["etat"]=EtatChute
       return
    
-   #on  recentre le point au millieu de la gauche
-   if(fond.get_at((lemming["x"],lemming["y"] + int(lemmingHeight/2))) != BLACK):
+   #colision lemming
+
+   #on  check tout les lemmings pour voir si il y en à un en arret
+   for onelemming in lemmingsLIST :
+      if(onelemming["etat"] == EtatStop):
+         #on recentre les points pour plus de facilité
+         x1 = onelemming["x"] 
+         y1 = onelemming["y"] 
+         x2 = lemming["x"]
+         y2 = lemming["y"]
+
+         if(((x1-x2)**2 + (y1-y2)**2) < lemmingWidth*8) : #largeur d'un lemming en position stop
+            lemming["vx"]*=-1
+
+            return
+
+   #collision murale :
+
+   #on  recentre le point en bas à gauche, 5 pixels devant
+   #-5 en y pour que l'action de tomber dans un trou d'un autre lemming soit logique
+   if(fond.get_at((lemming["x"] + 5,lemming["y"] + lemmingHeight - 5)) != BLACK): 
       lemming["vx"]*=-1
       return
 
-   #on  recentre le point au millieu de la droite
-   if(fond.get_at((lemming["x"] + lemmingWidth,lemming["y"] + int(lemmingHeight/2))) != BLACK):
+   #on  recentre le point en bas à droite, 5 pixels devant
+   if(fond.get_at((lemming["x"] + lemmingWidth + 5,lemming["y"] + lemmingHeight - 5)) != BLACK):
       lemming["vx"]*=-1
       return
+
+   #sortie 
+   if((lemming["x"] + lemmingWidth) >= (sortieX+ int(sortieWidth/2)) and (lemming["y"] + int(lemmingHeight/2)) >= (sortieY + int(sortieHeight/2))):
+      lemmingsAlive.append(lemming)
+      lemmingsLIST.remove(lemming)
+
+def transitionCreuse(lemming) :
+   compteur = 0
+   for i in range(20) :
+      if(fond.get_at((lemming["x"] + i,lemming["y"] + lemmingHeight)) == BLACK) :
+         compteur += 1
+   if(compteur == 20 ):
+      lemming["etat"] = EtatMarche
 
 # -------- Main Program Loop -----------
 
 marche = ChargeSerieSprites(0)
 tombe  = ChargeSerieSprites(1)
 mort = ChargeSerieSprites(10)
+stop = ChargeSerieSprites(4)
+creuse = ChargeSerieSprites(9)
+
+sortie = pygame.image.load(os.path.join(assets, "sortie.png"))
 
 pygame.mouse.set_visible(1)
 
@@ -122,12 +197,20 @@ while not done:
     event = pygame.event.Event(pygame.USEREVENT)    # Remise à zero de la variable event
    
     time = int( pygame.time.get_ticks() / 100 )
-    
+
     # draw background
     screen.blit(fond,(0,0))
-    
+    screen.blit(sortie,(sortieX,sortieY))
+
+    #fin de partie
+    if(compteur_creation == 15 and (len(lemmingsLIST) == 0 or len(lemmingsLIST) == compteur_waiting_lemming)):
+       if(len(lemmingsAlive)>=10):
+         screen.blit(victory,victory.get_rect(center=(800/2, 400/2)))
+       else:
+         screen.blit(defeat,defeat.get_rect(center=(800/2, 400/2)))
+
     # creation des lemmings : 1 lemming toutes les 1,5 secondes
-    if (  (compteur_creation < 15 ) and ( (time+compteur_creation) % 15 == 0) ):
+    if (  (compteur_creation < 15) and ( (time+compteur_creation) % 15 == 0) ):
       compteur_creation += 1
       new_lemming = {}
       new_lemming['x']  = 250
@@ -154,10 +237,22 @@ while not done:
             print("Click - Grid coordinates: ", x, y)
 
             #action joueur
+            #recupération des actions selectionnées
             if(y>bord_haut and y<WINDOW_SIZE[1]): #curseur à la bonne hauteur
                for i in range(0,9): #on parcour les 9 actions à l'horizontale
                   if(x>(bord_gauche + (largeur_action * i)) and x<(bord_gauche + (largeur_action * (i+1)))):
-                     selected_action = pygame.Rect(bord_gauche + (largeur_action * i) + 5 ,345,largeur_action-10,10)
+                     selected_rectangle = pygame.Rect(bord_gauche + (largeur_action * i) + 5 ,345,largeur_action-10,10)
+                     selected_action = actions[i]
+            else : #application de l'action sur le lemming
+               for onelemming in lemmingsLIST:
+                  if(x>=onelemming["x"] and x<=(onelemming["x"]+lemmingWidth) and y>=onelemming["y"] and y<=(onelemming["y"]+lemmingHeight)):
+                     if(selected_action != None): 
+                        if(onelemming['etat']!=EtatStop):
+                           onelemming['etat'] = selected_action
+                           if(selected_action == EtatStop):
+                              compteur_waiting_lemming+=1
+                        
+                     
          
             
    # ETAPE 1 : gestion des transitions
@@ -167,6 +262,8 @@ while not done:
          transitionChute(onelemming)
       elif(onelemming['etat'] == EtatMarche):
          transitionMarche(onelemming)
+      elif(onelemming['etat'] == EtatCreuse):
+         transitionCreuse(onelemming)
 
    # ETAPE 2 : gestion des actions    
 
@@ -181,6 +278,9 @@ while not done:
          actionStop(onelemming)
       elif(onelemming['etat'] == EtatDead):
          actionMort(onelemming)
+      elif(onelemming['etat'] == EtatCreuse):
+         #if(time % 20 == 0):
+            actionCreuse(onelemming)
          
     # ETAPE 3 : affichage des lemmings
     
@@ -193,13 +293,20 @@ while not done:
       if ( state == EtatChute ):
          screen.blit(tombe[(time+decal)%len(tombe)],(xx,yy))
       elif( state == EtatMarche):
-         screen.blit(marche[(time+decal)%len(marche)],(xx,yy))
+         if(onelemming["vx"]==1):
+             screen.blit(pygame.transform.flip(marche[(time+decal)%len(marche)],1,0),(xx,yy))
+         else:
+            screen.blit(marche[(time+decal)%len(marche)],(xx,yy))
+      elif(onelemming['etat'] == EtatStop):
+         screen.blit(stop[(time+decal)%len(stop)],(xx,yy))
       elif( state == EtatDead and onelemming["deathCounter"]!=0):
          screen.blit(mort[(16-onelemming["deathCounter"])],(xx,yy))
+      elif(onelemming['etat'] == EtatCreuse):
+         screen.blit(creuse[(time+decal)%len(creuse)],(xx,yy))
 
 
-      if(selected_action != None):
-         pygame.draw.rect(screen,YELLOW,selected_action)
+      if(selected_rectangle != None):
+         pygame.draw.rect(screen,YELLOW,selected_rectangle)
  
     clock.tick(20)
  
