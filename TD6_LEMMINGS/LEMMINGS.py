@@ -273,7 +273,7 @@ while not done:
                         if(onelemming['etat']!=EtatStop and onelemming['etat']!=EtatDead and onelemming['etat']!=EtatExplosion ): #les etats terminaux
                            
                            if(selected_action == EtatCreuse):
-                              if(onelemming['action'] == EtatMarche):
+                              if(onelemming['etat'] == EtatMarche):
                                  onelemming['etat'] = selected_action
                            else : 
                               #l'explosion peut être activé de partout 
@@ -308,7 +308,7 @@ while not done:
       elif(onelemming['etat'] == EtatDead):
          actionMort(onelemming)
       elif(onelemming['etat'] == EtatCreuse):
-         #if(time % 20 == 0):
+         if(time % 20 == 0):
             actionCreuse(onelemming)
       elif(onelemming['etat'] == EtatParachute):
          actionParachute(onelemming)
