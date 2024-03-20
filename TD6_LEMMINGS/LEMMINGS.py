@@ -50,8 +50,8 @@ RED   = [255, 0, 0]
 
 #police
 police = pygame.font.SysFont("Arial", 25)
-victory = police.render("VICTOIRE",YELLOW,BLACK)
-defeat = police.render("GAME OVER",RED,BLACK)
+victory = police.render("VICTOIRE",True,YELLOW,BLACK)
+defeat = police.render("GAME OVER",True,RED,BLACK)
 
 # liste des etats
 EtatMarche = 100
@@ -59,6 +59,8 @@ EtatChute  = 200
 EtatStop   = 300
 EtatDead   = 400
 EtatCreuse = 500
+EtatParachute = 600
+EtatExplosion = 700
    
 # liste des lemmins en cours de jeu
 
@@ -85,13 +87,13 @@ largeur_action = difference/9
 #données actions 
 actions = [ #A compléter, mis à 9 pour ne pas gérer les Out Of Bounds
    EtatStop,
+   None,
+   None,
+   EtatParachute,
+   EtatExplosion,
+   None,
+   None,
    EtatCreuse,
-   None,
-   None,
-   None,
-   None,
-   None,
-   None,
    None,
 ]
 selected_rectangle = None
@@ -115,10 +117,24 @@ def actionMort(lemming) :
    else:
       lemmingsLIST.remove(lemming)
 
+def actionExplosion(lemming) :
+   if(lemming['explosionCounter'] != 0):
+      lemming['explosionCounter']-=1
+   else:
+      x = lemming["x"] + int(lemmingWidth/2)
+      y = lemming["y"] + int(lemmingHeight/2)
+      for i in range(60):
+         for j in range(60):
+            fond.set_at(( x - int(60/2) + i, y - int(60/2) + j),BLACK)
+      lemmingsLIST.remove(lemming)
+
 def actionCreuse(lemming) :
    for i in range(20) :
       fond.set_at((lemming["x"] + i,lemming["y"] + lemmingHeight),BLACK)
    lemming["y"]+=1
+
+def actionParachute(lemming) :
+   lemming['y'] += 1
 
 #fonction de transition
 def transitionChute(lemming):
@@ -181,6 +197,10 @@ def transitionCreuse(lemming) :
    if(compteur == 20 ):
       lemming["etat"] = EtatMarche
 
+def transitionParachute(lemming) :
+   if(fond.get_at((lemming["x"] + int(lemmingWidth/2),lemming["y"] + lemmingHeight)) != BLACK):
+      lemming["fallcount"] = 0 #pour être sur qu'il n'y a paas d'accumulation de fall damages
+      lemming["etat"] = EtatMarche
 # -------- Main Program Loop -----------
 
 marche = ChargeSerieSprites(0)
@@ -188,6 +208,8 @@ tombe  = ChargeSerieSprites(1)
 mort = ChargeSerieSprites(10)
 stop = ChargeSerieSprites(4)
 creuse = ChargeSerieSprites(9)
+parachute = ChargeSerieSprites(3)
+explosion = ChargeSerieSprites(5)
 
 sortie = pygame.image.load(os.path.join(assets, "sortie.png"))
 
@@ -220,6 +242,7 @@ while not done:
       new_lemming['fallcount'] = 0
       new_lemming['decal'] = random.randint(0,4)
       new_lemming['deathCounter'] = 16
+      new_lemming['explosionCounter'] = 14
       lemmingsLIST.append(new_lemming)
 
    # gestion des évènements
@@ -247,13 +270,17 @@ while not done:
                for onelemming in lemmingsLIST:
                   if(x>=onelemming["x"] and x<=(onelemming["x"]+lemmingWidth) and y>=onelemming["y"] and y<=(onelemming["y"]+lemmingHeight)):
                      if(selected_action != None): 
-                        if(onelemming['etat']!=EtatStop):
-                           onelemming['etat'] = selected_action
-                           if(selected_action == EtatStop):
-                              compteur_waiting_lemming+=1
-                        
-                     
-         
+                        if(onelemming['etat']!=EtatStop and onelemming['etat']!=EtatDead and onelemming['etat']!=EtatExplosion ): #les etats terminaux
+                           
+                           if(selected_action == EtatCreuse):
+                              if(onelemming['action'] == EtatMarche):
+                                 onelemming['etat'] = selected_action
+                           else : 
+                              #l'explosion peut être activé de partout 
+                              #la transition parachute gère bien le changement vers l'état marche si mal activé
+                              onelemming['etat'] = selected_action
+                              if(selected_action == EtatStop):
+                                 compteur_waiting_lemming+=1 
             
    # ETAPE 1 : gestion des transitions
     for onelemming in lemmingsLIST:
@@ -264,6 +291,8 @@ while not done:
          transitionMarche(onelemming)
       elif(onelemming['etat'] == EtatCreuse):
          transitionCreuse(onelemming)
+      elif(onelemming['etat'] == EtatParachute):
+         transitionParachute(onelemming)
 
    # ETAPE 2 : gestion des actions    
 
@@ -281,6 +310,10 @@ while not done:
       elif(onelemming['etat'] == EtatCreuse):
          #if(time % 20 == 0):
             actionCreuse(onelemming)
+      elif(onelemming['etat'] == EtatParachute):
+         actionParachute(onelemming)
+      elif(onelemming['etat'] == EtatExplosion):
+         actionExplosion(onelemming)
          
     # ETAPE 3 : affichage des lemmings
     
@@ -297,12 +330,17 @@ while not done:
              screen.blit(pygame.transform.flip(marche[(time+decal)%len(marche)],1,0),(xx,yy))
          else:
             screen.blit(marche[(time+decal)%len(marche)],(xx,yy))
-      elif(onelemming['etat'] == EtatStop):
+      elif( state == EtatStop):
          screen.blit(stop[(time+decal)%len(stop)],(xx,yy))
       elif( state == EtatDead and onelemming["deathCounter"]!=0):
          screen.blit(mort[(16-onelemming["deathCounter"])],(xx,yy))
-      elif(onelemming['etat'] == EtatCreuse):
+      elif( state == EtatCreuse):
          screen.blit(creuse[(time+decal)%len(creuse)],(xx,yy))
+      elif( state == EtatParachute):
+         screen.blit(parachute[(time+decal)%len(parachute)],(xx,yy))
+      elif( state == EtatExplosion and onelemming["explosionCounter"]!=0):
+         screen.blit(explosion[(14-onelemming["explosionCounter"])],(xx,yy))
+      
 
 
       if(selected_rectangle != None):
