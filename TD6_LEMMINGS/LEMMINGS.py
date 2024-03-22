@@ -54,13 +54,13 @@ victory = police.render("VICTOIRE",True,YELLOW,BLACK)
 defeat = police.render("GAME OVER",True,RED,BLACK)
 
 # liste des etats
-EtatMarche = 100
-EtatChute  = 200
-EtatStop   = 300
-EtatDead   = 400
-EtatCreuse = 500
-EtatParachute = 600
-EtatExplosion = 700
+EtatMarche = "Marche"
+EtatChute  = "Chute"
+EtatStop   = "Stop"
+EtatDead   = "Mort"
+EtatCreuse = "Creuse"
+EtatParachute = "Parachute"
+EtatExplosion = "Explosion"
    
 # liste des lemmins en cours de jeu
 
@@ -192,10 +192,16 @@ def transitionMarche(lemming):
 def transitionCreuse(lemming) :
    compteur = 0
    for i in range(20) :
+      if lemming["y"] + lemmingHeight >= WINDOW_SIZE[1]:  # Si le lemming dépasse le bas de l'écran
+         lemming["etat"] = EtatDead
+         break
       if(fond.get_at((lemming["x"] + i,lemming["y"] + lemmingHeight)) == BLACK) :
          compteur += 1
    if(compteur == 20 ):
       lemming["etat"] = EtatMarche
+
+   
+
 
 def transitionParachute(lemming) :
    if(fond.get_at((lemming["x"] + int(lemmingWidth/2),lemming["y"] + lemmingHeight)) != BLACK):
@@ -325,11 +331,18 @@ while not done:
       
       if ( state == EtatChute ):
          screen.blit(tombe[(time+decal)%len(tombe)],(xx,yy))
-      elif( state == EtatMarche):
-         if(onelemming["vx"]==1):
-             screen.blit(pygame.transform.flip(marche[(time+decal)%len(marche)],1,0),(xx,yy))
+      elif state == EtatMarche:
+         current_sprite = marche[(time + decal) % len(marche)]
+         if onelemming["vx"] == 1:
+            # Flip le sprite pour la direction droite
+            flipped_sprite = pygame.transform.flip(current_sprite, True, False)
+            ancrage_decalage = flipped_sprite.get_width() - current_sprite.get_width()
+            # Appliquer le décalage lors de l'affichage du sprite pour conserver le point d'ancrage visuel cohérent
+            screen.blit(flipped_sprite, (xx - ancrage_decalage-13, yy))
          else:
-            screen.blit(marche[(time+decal)%len(marche)],(xx,yy))
+            # Pas besoin d'ajuster le point d'ancrage pour le mouvement vers la gauche
+            screen.blit(current_sprite, (xx, yy))
+
       elif( state == EtatStop):
          screen.blit(stop[(time+decal)%len(stop)],(xx,yy))
       elif( state == EtatDead and onelemming["deathCounter"]!=0):
