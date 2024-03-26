@@ -7,6 +7,8 @@ Ce programme est un exemple simplifié du jeu Lemmings en utilisant Pygame.
 Features BONUS à LEMMINGS :
 - Ajout du sort : Parachutiste
 - Ajout du sort : explosion
+- Ajout du sort : creusement horizontal
+- Ajout de la liste des sorts disponibles
 - Gestion des dépassements de lemmings en bas de l'écran (creusement, chute)
 - Ajout de la fonctionnalité : pause, exit
 - Ajout d'un timer et statistiques
@@ -80,7 +82,8 @@ EtatMarche = "Marche"
 EtatChute = "Chute"
 EtatStop = "Stop"
 EtatDead = "Mort"
-EtatCreuse = "Creuse"
+EtatCreuseVertical = "Creuse Verticale"
+EtatCreuseHorizontal = "Creuse Horizontale"
 EtatParachute = "Parachute"
 EtatExplosion = "Explosion"
 
@@ -91,9 +94,9 @@ actions = [
     None,
     EtatParachute,
     EtatExplosion,
+    EtatCreuseVertical,
     None,
-    None,
-    EtatCreuse,
+    EtatCreuseHorizontal, # Creuse Horizontal
     None,
 ]
 # Nombre d'utilisations restantes pour chaque sort
@@ -101,7 +104,8 @@ sorts_disponibles = {
     EtatStop: 2,
     EtatParachute: 5,
     EtatExplosion: 3,
-    EtatCreuse: 4,
+    EtatCreuseVertical: 4,
+    #EtatCreuseHorizontal : 0
 }
 
 
@@ -121,7 +125,8 @@ marche = ChargeSerieSprites(0)
 tombe = ChargeSerieSprites(1)
 mort = ChargeSerieSprites(10)
 stop = ChargeSerieSprites(4)
-creuse = ChargeSerieSprites(9)
+creuseVertical = ChargeSerieSprites(7)
+creuseHorizontal = ChargeSerieSprites(9)
 parachute = ChargeSerieSprites(3)
 explosion = ChargeSerieSprites(5)
 
@@ -168,13 +173,34 @@ def actionExplosion(lemming) :
                 fond.set_at(( x - int(60/2) + i, y - int(60/2) + j),BLACK)
         lemmingsLIST.remove(lemming)
 
-def actionCreuse(lemming) :
+def actionCreuseVertical(lemming) :
     """ 
     Action de creusement du Lemming.
     """
     for i in range(20) :
         fond.set_at((lemming["x"] + i,lemming["y"] + lemmingHeight),BLACK)
     lemming["y"]+=1
+    
+def actionCreuseHorizontale(lemming):
+    """Action de creusement horizontal du Lemming orienté vers le mur le plus proche."""
+    # Calculer la distance jusqu'au mur le plus proche de chaque côté
+    distance_gauche = lemming['x']
+    distance_droite = WINDOW_SIZE[0] - (lemming['x'] + lemmingWidth)
+    
+    # Déterminer la direction basée sur la distance la plus courte
+    if distance_gauche < distance_droite:
+        direction = -1  # Creuse vers la gauche
+    else:
+        direction = 1  # Creuse vers la droite
+    
+    # Appliquer la direction au vecteur de vitesse du lemming pour le faire creuser dans la bonne direction
+    lemming['vx'] = direction * abs(lemming['vx'])
+    
+    # Effectuer le creusement
+    start_x = lemming['x'] + (lemmingWidth if direction > 0 else 0)
+    for i in range(20):
+        fond.set_at((start_x + i * direction, lemming['y'] + int(lemmingHeight / 2)), BLACK)
+    lemming['x'] += lemming['vx']
 
 def actionParachute(lemming) :
     """ 
@@ -246,7 +272,7 @@ def transitionMarche(lemming):
         lemmingsAlive.append(lemming)
         lemmingsLIST.remove(lemming)
 
-def transitionCreuse(lemming) :
+def transitionCreuseVertical(lemming) :
     """
     Transition de l'état Creuse.
     """
@@ -259,6 +285,22 @@ def transitionCreuse(lemming) :
             compteur += 1
     if(compteur == 20 ):
         lemming["etat"] = EtatMarche
+        
+def transitionCreuseHorizontal(lemming):
+    """Transition pour l'état de creusement horizontal."""
+    # Vérifie si le Lemming peut continuer à creuser dans sa direction
+    direction = 1 if lemming['vx'] > 0 else -1
+
+    compteur = 0
+    for i in range(20):
+        next_x = lemming['x'] + (lemmingWidth if direction > 0 else -20)
+        if next_x < 0 or next_x + lemmingWidth >= WINDOW_SIZE[0]:  # Vérifie les bords de l'écran
+            lemming['etat'] = EtatDead
+            return
+        if fond.get_at((next_x + i * direction, lemming['y'] + int(lemmingHeight / 2))) != BLACK:
+            compteur += 1
+    if compteur == 20:
+        lemming['etat'] = EtatMarche
 
    
 
@@ -310,7 +352,7 @@ def handle_mouse_event(pos):
         for lemming in lemmingsLIST:
             if x >= lemming["x"] and x <= (lemming["x"] + lemmingWidth) and y >= lemming["y"] and y <= (lemming["y"] + lemmingHeight):
                 if selected_action and sorts_disponibles.get(selected_action, 0) > 0:  # Vérif la disponibilité du sort
-                    if lemming['etat'] not in [EtatStop, EtatDead, EtatExplosion]:  # États terminaux
+                    if lemming['etat'] not in [EtatStop,EtatChute, EtatDead, EtatExplosion ] and selected_action != lemming['etat']:
                         lemming['etat'] = selected_action
                         sorts_disponibles[selected_action] -= 1  # Décrémenter le compteur du sort
 
@@ -346,8 +388,10 @@ def update_lemming_state(lemming):
          transitionChute(lemming)
     elif(lemming['etat'] == EtatMarche):
          transitionMarche(lemming)
-    elif(lemming['etat'] == EtatCreuse):
-         transitionCreuse(lemming)
+    elif(lemming['etat'] == EtatCreuseVertical):
+         transitionCreuseVertical(lemming)
+    elif(lemming['etat'] == EtatCreuseHorizontal):
+         transitionCreuseHorizontal(lemming)
     elif(lemming['etat'] == EtatParachute):
          transitionParachute(lemming)
 
@@ -366,9 +410,12 @@ def perform_lemming_action(lemming):
         actionStop(lemming)
     elif(lemming['etat'] == EtatDead):
         actionMort(lemming)
-    elif(lemming['etat'] == EtatCreuse):
+    elif(lemming['etat'] == EtatCreuseVertical):
         if(time % 20 == 0):
-          actionCreuse(lemming)
+          actionCreuseVertical(lemming)
+    elif(lemming['etat'] == EtatCreuseHorizontal):
+        if(time % 20 == 0):
+          actionCreuseHorizontale(lemming)
     elif(lemming['etat'] == EtatParachute):
         actionParachute(lemming)
     elif(lemming['etat'] == EtatExplosion):
@@ -394,8 +441,11 @@ def draw_lemming(lemming):
         spr = stop[(time + decal) % len(stop)]
     elif lemming['etat'] == EtatDead and lemming["deathCounter"] > 0:
         spr = mort[16 - lemming["deathCounter"]]   # le 16 est le nombre de sprites de mort
-    elif lemming['etat'] == EtatCreuse:
-        spr = creuse[(time + decal) % len(creuse)]
+    elif lemming['etat'] == EtatCreuseVertical:
+        spr = creuseVertical[(time + decal) % len(creuseVertical)]
+    elif lemming['etat'] == EtatCreuseHorizontal:
+        spr = creuseHorizontal[(time + decal) % len(creuseHorizontal)]
+        flipped = lemming["vx"] > 0
     elif lemming['etat'] == EtatParachute:
         spr = parachute[(time + decal) % len(parachute)]
     elif lemming['etat'] == EtatExplosion and lemming["explosionCounter"] > 0:
@@ -414,17 +464,22 @@ def draw_lemming(lemming):
             
 def display_spells_left():
     """ 
-    Affiche le nombre restant de chaque sort sur sa tuile correspondante.
+    Affiche le nombre restant de chaque sort sur sa tuile correspondante, affiche 0 en gris si aucun sort n'est disponible.
     """
     small_font = pygame.font.SysFont("Arial", 18)
+    gray_color = (128, 128, 128)  # Couleur grise pour les sorts non disponibles
     for i, action in enumerate(actions):
-        if action in sorts_disponibles:
-            count = sorts_disponibles[action]
-            if count > 0:  # Affiche le compteur seulement s'il reste des utilisations
-                x_pos = bord_gauche + (largeur_action * i) + largeur_action / 2 - 5  # Centrer le texte sur la tuile
-                y_pos = bord_haut + 5  # Un peu au-dessus de la tuile
-                count_text = small_font.render(f"{count}", True, YELLOW)
-                screen.blit(count_text, (x_pos, y_pos))
+        count = sorts_disponibles.get(action, 0)  # Obtient le nombre de sorts disponibles, 0 si non présent
+        color = YELLOW if count > 0 else gray_color  # Utilise la couleur jaune pour les sorts disponibles, gris sinon
+        
+        # Calcul de la position pour centrer le texte sur la tuile correspondante
+        x_pos = bord_gauche + (largeur_action * i) + largeur_action / 2 - 5  # Ajustement pour centrer
+        y_pos = bord_haut + 5  # Positionnement au-dessus de la tuile
+        
+        # Création et affichage du texte
+        count_text = small_font.render(str(count), True, color)
+        screen.blit(count_text, (x_pos, y_pos))
+
 
 
 
