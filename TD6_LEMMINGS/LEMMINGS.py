@@ -8,6 +8,7 @@ Features BONUS à LEMMINGS :
 - Ajout du sort : Parachutiste
 - Ajout du sort : explosion
 - Ajout de la fonctionnalité : pause, exit
+- Ajout d'un timer et statistiques
 """
 
 import pygame
@@ -46,10 +47,13 @@ BLACK = (0, 0, 0, 255)
 YELLOW = [255, 255, 0]
 RED = [255, 0, 0]
 clock = pygame.time.Clock()
+
+# Textes
 police = pygame.font.SysFont("Arial", 25)
 pauseText = police.render("PAUSE", True, YELLOW, BLACK)
 victoryText = police.render("VICTORY!", True, YELLOW, BLACK)
 defeatText = police.render("GAME OVER", True, RED, BLACK)
+
 selected_rectangle = None
 selected_action = None
 lemmingsLIST = []
@@ -389,13 +393,13 @@ def draw_lemming(lemming):
     # Sélection du sprite basé sur l'état
     if lemming['etat'] == EtatMarche:
         spr = marche[(time + decal) % len(marche)]
-        flipped = lemming["vx"] > 0
+        flipped = lemming["vx"] > 0 # marche vers la droite
     elif lemming['etat'] == EtatChute:
         spr = tombe[(time + decal) % len(tombe)]
     elif lemming['etat'] == EtatStop:
         spr = stop[(time + decal) % len(stop)]
     elif lemming['etat'] == EtatDead and lemming["deathCounter"] > 0:
-        spr = mort[16 - lemming["deathCounter"]]  
+        spr = mort[16 - lemming["deathCounter"]]   # le 16 est le nombre de sprites de mort
     elif lemming['etat'] == EtatCreuse:
         spr = creuse[(time + decal) % len(creuse)]
     elif lemming['etat'] == EtatParachute:
@@ -414,17 +418,44 @@ def draw_lemming(lemming):
         else:
             screen.blit(spr, (lemming['x'], lemming['y']))
 
+def display_timer_and_stats():
+    """
+    Fonction d'affichage du timer et des statistiques.
+    """
+    current_time = pygame.time.get_ticks()
+    # Calcul du temps restant en se basant sur la variable total_time
+    remaining_time = max(total_time - (current_time - start_time) // 1000, 0)
+    saved_lemmings = len(lemmingsAlive)
+    total_lemmings = compteur_creation
+    saved_percentage = 100 * saved_lemmings / max(total_lemmings, 1)
+
+    timer_text = police.render(f"Time: {remaining_time // 60}:{remaining_time % 60:02d}", True, YELLOW)
+    saved_text = police.render(f"Saved: {saved_lemmings} ({saved_percentage:.0f}%)", True, YELLOW)
+
+    screen.blit(timer_text, (WINDOW_SIZE[0] - timer_text.get_width() - 10, WINDOW_SIZE[1] - timer_text.get_height() - 30))
+    screen.blit(saved_text, (WINDOW_SIZE[0] - saved_text.get_width() - 10, WINDOW_SIZE[1] - saved_text.get_height()))
+
 
 def check_game_over():
     """
     Fonction de vérification de la fin de partie.
     Affiche un message de victoire ou de défaite.
     """
+    current_time = pygame.time.get_ticks()
+    remaining_time = max(total_time - (current_time - start_time) // 1000, 0)
+
+    if remaining_time == 0:
+        screen.blit(defeatText, defeatText.get_rect(center=(WINDOW_SIZE[0] / 2, WINDOW_SIZE[1] / 2)))
+        return True
+
     if compteur_creation == 15 and (len(lemmingsLIST) == 0 or len(lemmingsLIST) == compteur_waiting_lemming):
-        if len(lemmingsAlive) >= 10:
+        if len(lemmingsAlive) >= 10: # 10 Lemmings sauvés pour la victoire
             screen.blit(victoryText, victoryText.get_rect(center=(WINDOW_SIZE[0] / 2, WINDOW_SIZE[1] / 2)))
         else:
             screen.blit(defeatText, defeatText.get_rect(center=(WINDOW_SIZE[0] / 2, WINDOW_SIZE[1] / 2)))
+        return True
+
+    return False
 
 # -------------------------------------
 # -------- Main Program Loop -----------
@@ -432,20 +463,24 @@ def check_game_over():
 done = False
 is_paused = False
 
+total_time = 240 # Durée totale du jeu en secondes (4 minutes)
+start_time = pygame.time.get_ticks()  # Temps de départ en millisecondes
+
+
 pygame.mouse.set_visible(1)
 while not done:
     time = int(pygame.time.get_ticks() / 100)
     handle_events()
     
-    if not is_paused: # Jeu en cours
+    if not is_paused and not check_game_over(): # Jeu en cours
         create_lemmings()
         screen.blit(fond, (0, 0))  # Affichage du fond
         screen.blit(sortie, (sortieX, sortieY)) # Affichage de la sortie
         update_and_draw_lemmings() # Mise à jour et affichage des Lemmings
         if selected_rectangle is not None:
             pygame.draw.rect(screen, YELLOW, selected_rectangle) # Affichage de la sélection d'action
-        check_game_over()
-    else: # Pause
+        display_timer_and_stats()
+    elif is_paused: # Pause
         screen.blit(pauseText, pauseText.get_rect(center=(WINDOW_SIZE[0] / 2, WINDOW_SIZE[1] / 2)))
 
     pygame.display.flip()
