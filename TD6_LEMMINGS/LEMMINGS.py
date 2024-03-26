@@ -7,6 +7,7 @@ Ce programme est un exemple simplifié du jeu Lemmings en utilisant Pygame.
 Features BONUS à LEMMINGS :
 - Ajout du sort : Parachutiste
 - Ajout du sort : explosion
+- Gestion des dépassements de lemmings en bas de l'écran (creusement, chute)
 - Ajout de la fonctionnalité : pause, exit
 - Ajout d'un timer et statistiques
 """
@@ -95,6 +96,14 @@ actions = [
     EtatCreuse,
     None,
 ]
+# Nombre d'utilisations restantes pour chaque sort
+sorts_disponibles = {
+    EtatStop: 2,
+    EtatParachute: 5,
+    EtatExplosion: 3,
+    EtatCreuse: 4,
+}
+
 
 def ChargeSerieSprites(id):
     """
@@ -288,37 +297,22 @@ def handle_mouse_event(pos):
     """
     Fonction de gestion des événements de la souris.
     """
-    global selected_rectangle, selected_action, compteur_waiting_lemming
+    global selected_rectangle, selected_action, compteur_waiting_lemming, sorts_disponibles
     x, y = pos
-    x = pos[0]
-    y = pos[1]
-    pygame.draw.line(screen, (255,255,255),(x-5,y),(x+5,y))
-    pygame.draw.line(screen, (255,255,255),(x,y-5),(x,y+5))
-    print("Click - Grid coordinates: ", x, y)
 
-    #action joueur
-    #recupération des actions selectionnées
-    if(y>bord_haut and y<WINDOW_SIZE[1]): #curseur à la bonne hauteur
-        for i in range(0,9): #on parcour les 9 actions à l'horizontale
-            if(x>(bord_gauche + (largeur_action * i)) and x<(bord_gauche + (largeur_action * (i+1)))):
-                selected_rectangle = pygame.Rect(bord_gauche + (largeur_action * i) + 5 ,345,largeur_action-10,10)
-                print("Action selected : ",actions[i])
+    if y > bord_haut and y < WINDOW_SIZE[1]:  # Sélection d'une action
+        for i in range(len(actions)):
+            if x > bord_gauche + (largeur_action * i) and x < bord_gauche + (largeur_action * (i + 1)):
+                selected_rectangle = pygame.Rect(bord_gauche + (largeur_action * i) + 5, 345, largeur_action - 10, 10)
                 selected_action = actions[i]
-    else : #application de l'action sur le lemming
-        for onelemming in lemmingsLIST:
-            if(x>=onelemming["x"] and x<=(onelemming["x"]+lemmingWidth) and y>=onelemming["y"] and y<=(onelemming["y"]+lemmingHeight)):
-                if(selected_action != None): 
-                  if(onelemming['etat']!=EtatStop and onelemming['etat']!=EtatDead and onelemming['etat']!=EtatExplosion ): #les etats terminaux
-                    
-                    if(selected_action == EtatCreuse):
-                        if(onelemming['etat'] == EtatMarche):
-                            onelemming['etat'] = selected_action
-                    else : 
-                        #l'explosion peut être activé de partout 
-                        #la transition parachute gère bien le changement vers l'état marche si mal activé
-                        onelemming['etat'] = selected_action
-                        if(selected_action == EtatStop):
-                            compteur_waiting_lemming+=1 
+                print(f"Action selected: {selected_action}")
+    else:  # Application de l'action sur un lemming
+        for lemming in lemmingsLIST:
+            if x >= lemming["x"] and x <= (lemming["x"] + lemmingWidth) and y >= lemming["y"] and y <= (lemming["y"] + lemmingHeight):
+                if selected_action and sorts_disponibles.get(selected_action, 0) > 0:  # Vérif la disponibilité du sort
+                    if lemming['etat'] not in [EtatStop, EtatDead, EtatExplosion]:  # États terminaux
+                        lemming['etat'] = selected_action
+                        sorts_disponibles[selected_action] -= 1  # Décrémenter le compteur du sort
 
 def create_lemmings():
     """ 
@@ -417,6 +411,22 @@ def draw_lemming(lemming):
             screen.blit(flipped_sprite, (lemming['x'] - ancrage_decalage-13, lemming['y']))
         else:
             screen.blit(spr, (lemming['x'], lemming['y']))
+            
+def display_spells_left():
+    """ 
+    Affiche le nombre restant de chaque sort sur sa tuile correspondante.
+    """
+    small_font = pygame.font.SysFont("Arial", 18)
+    for i, action in enumerate(actions):
+        if action in sorts_disponibles:
+            count = sorts_disponibles[action]
+            if count > 0:  # Affiche le compteur seulement s'il reste des utilisations
+                x_pos = bord_gauche + (largeur_action * i) + largeur_action / 2 - 5  # Centrer le texte sur la tuile
+                y_pos = bord_haut + 5  # Un peu au-dessus de la tuile
+                count_text = small_font.render(f"{count}", True, YELLOW)
+                screen.blit(count_text, (x_pos, y_pos))
+
+
 
 def display_timer_and_stats():
     """
@@ -480,6 +490,7 @@ while not done:
         if selected_rectangle is not None:
             pygame.draw.rect(screen, YELLOW, selected_rectangle) # Affichage de la sélection d'action
         display_timer_and_stats()
+        display_spells_left()
     elif is_paused: # Pause
         screen.blit(pauseText, pauseText.get_rect(center=(WINDOW_SIZE[0] / 2, WINDOW_SIZE[1] / 2)))
 
