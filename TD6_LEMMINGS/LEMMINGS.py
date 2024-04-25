@@ -8,17 +8,12 @@ Features BONUS à LEMMINGS :
 - Ajout du sort : Parachutiste
 - Ajout du sort : explosion
 - Ajout du sort : creusement horizontal
-- Ajout de la liste des sorts disponibles
+- Ajout de la liste des sorts disponibles (limités)
 - Gestion des dépassements de lemmings en bas de l'écran (creusement, chute)
 - Ajout de la fonctionnalité : pause, exit
 - Ajout d'un timer et statistiques
 """
 
-import pygame
-import os, inspect
-import random
-
-# Rest of the code...
 import pygame
 import os, inspect
 import random
@@ -352,7 +347,7 @@ def handle_mouse_event(pos):
         for lemming in lemmingsLIST:
             if x >= lemming["x"] and x <= (lemming["x"] + lemmingWidth) and y >= lemming["y"] and y <= (lemming["y"] + lemmingHeight):
                 if selected_action and sorts_disponibles.get(selected_action, 0) > 0:  # Vérif la disponibilité du sort
-                    if lemming['etat'] not in [EtatStop,EtatChute, EtatDead, EtatExplosion ] and selected_action != lemming['etat']:
+                    if lemming['etat'] not in [EtatStop, EtatDead, EtatExplosion ] and selected_action != lemming['etat']:
                         lemming['etat'] = selected_action
                         sorts_disponibles[selected_action] -= 1  # Décrémenter le compteur du sort
 
