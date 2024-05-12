@@ -11,8 +11,6 @@ Features BONUS à LEMMINGS :
 - Gestion des dépassements de lemmings en bas de l'écran (creusement, chute)
 - Ajout de la fonctionnalité : pause, exit
 - Ajout d'un timer et statistiques
-
-Vidéo : https://youtu.be/Jwm2pIhBmn4 
 """
 
 import pygame
