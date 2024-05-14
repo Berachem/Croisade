@@ -64,6 +64,9 @@ Ghosts.append(  [LARGEUR//2, HAUTEUR // 2 ,  "cyan"  ]   )
 Ghosts.append(  [LARGEUR//2, HAUTEUR // 2 ,  "red"   ]     )         
 
 
+# Initialistion du score 
+score = 0
+
 
 ##############################################################################
 #
@@ -296,7 +299,16 @@ def GhostsPossibleMove(x,y):
    if ( TBL[x+1][y  ] == 2 ): L.append(( 1,0))
    if ( TBL[x-1][y  ] == 2 ): L.append((-1,0))
    return L
-   
+
+def EatingGum():
+   global PacManPos,score
+
+   if(GUM[PacManPos[0]][PacManPos[1]] ==  1):
+      GUM[PacManPos[0]][PacManPos[1]] = 0
+      score+=100
+
+
+
 def IAPacman():
    global PacManPos, Ghosts
    #deplacement Pacman
@@ -304,7 +316,10 @@ def IAPacman():
    choix = random.randrange(len(L))
    PacManPos[0] += L[choix][0]
    PacManPos[1] += L[choix][1]
-   
+
+   #mengeage des gommes 
+   EatingGum()
+
    # juste pour montrer comment on se sert de la fonction SetInfo1
    for x in range(LARGEUR):
       for y in range(HAUTEUR):
@@ -331,14 +346,14 @@ def IAGhosts():
 
 iteration = 0
 def PlayOneTurn():
-   global iteration
+   global iteration,score
    
    if not PAUSE_FLAG : 
       iteration += 1
       if iteration % 2 == 0 :   IAPacman()
       else:                     IAGhosts()
    
-   Affiche(PacmanColor = "yellow", message = "message")  
+   Affiche(PacmanColor = "yellow", message = "score : "+str(score))  
  
  
 ###########################################:
