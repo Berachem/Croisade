@@ -140,15 +140,22 @@ Window.title("ESIEE - PACMAN")
 # gestion de la pause
 
 PAUSE_FLAG = False 
+LEAVE_FLAG = False
 
 def keydown(e):
-   global PAUSE_FLAG
+   global PAUSE_FLAG, LEAVE_FLAG
    if e.char == ' ' : 
       PAUSE_FLAG = not PAUSE_FLAG 
+      print("PAUSE" if PAUSE_FLAG else "UNPAUSE")
+   if e.keysym  == 'Escape' :
+      print("Vous avez quitté la fenêtre")
+      LEAVE_FLAG = True
+      
  
 Window.bind("<KeyPress>", keydown)
- 
 
+
+ 
 # création de la frame principale stockant plusieurs pages
 
 F = tk.Frame(Window)
@@ -175,6 +182,10 @@ def AfficherPage(id):
     
     
 def WindowAnim():
+    if LEAVE_FLAG :
+       Window.destroy()
+       return
+   
     PlayOneTurn()
     Window.after(333,WindowAnim)
 
@@ -268,6 +279,8 @@ def Affiche(PacmanColor,message):
    canvas.create_oval(xx-e,yy-e, xx+e,yy+e, fill = PacmanColor)
    canvas.create_polygon(xx,yy,xx+e,yy+ouv_bouche,xx+e,yy-ouv_bouche, fill="black")  # bouche
    
+   
+
   
    #dessine les fantomes
    dec = -3
@@ -292,8 +305,11 @@ def Affiche(PacmanColor,message):
       dec += 3
       
    # texte  
+   if PAUSE_FLAG:
+      canvas.create_text(screeenWidth // 2, screenHeight- 50 , text = "UNPAUSE : PRESS SPACE", fill ="red", font = PoliceTexte)
+   else : 
+      canvas.create_text(screeenWidth // 2, screenHeight- 50 , text = "PAUSE : PRESS SPACE", fill ="yellow", font = PoliceTexte)
    
-   canvas.create_text(screeenWidth // 2, screenHeight- 50 , text = "PAUSE : PRESS SPACE", fill ="yellow", font = PoliceTexte)
    canvas.create_text(screeenWidth // 2, screenHeight- 20 , text = message, fill ="yellow", font = PoliceTexte)
    
  
