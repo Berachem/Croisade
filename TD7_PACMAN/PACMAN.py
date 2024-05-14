@@ -33,7 +33,7 @@ TBL = CreateArray([
         [1,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,1],
         [1,0,1,1,0,1,0,1,1,1,1,1,1,0,1,0,1,1,0,1],
         [1,0,0,0,0,1,0,0,0,0,0,0,0,0,1,0,0,0,0,1],
-        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1] ]);
+        [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1] ])
 # attention, on utilise TBL[x][y] 
         
 HAUTEUR = TBL.shape [1]      
@@ -66,6 +66,29 @@ Ghosts.append(  [LARGEUR//2, HAUTEUR // 2 ,  "red"   ]     )
 
 # Initialistion du score 
 score = 0
+
+# Cartes des plus courts chemins 
+
+GOMME = 0
+WALL = 1
+GHOST = 2
+WALL_VALUE = 1000
+MAX_PATH_VALUE = 220 #le nombre de case dans la grille est le plus long chemin théorique
+
+def initPath(path,checked_value):
+   for x in range(LARGEUR):
+      for y in range(HAUTEUR):
+         if(TBL[x][y] == WALL):
+            path[x][y] = WALL_VALUE
+         elif(TBL[x][y] == checked_value):
+            path[x][y] = 0
+         else:
+            path[x][y] = MAX_PATH_VALUE
+   
+   return path
+
+GUM_PATH = initPath(np.empty([20,11]),GOMME)
+GHOST_PATH = initPath(np.empty([20,11]),GHOST)
 
 
 ##############################################################################
@@ -304,18 +327,63 @@ def EatingGum():
    global PacManPos,score
 
    if(GUM[PacManPos[0]][PacManPos[1]] ==  1):
+      
+      #mange la gomme
       GUM[PacManPos[0]][PacManPos[1]] = 0
       score+=100
 
+      #actualise la carte des distance des gommes
+      GUM_PATH[PacManPos[0]][PacManPos[1]] = MAX_PATH_VALUE
+      ActualisePath(GUM_PATH)     
+
+def ActualisePath(path):
+   
+   #reset des distances non-nulles
+   for x in range(1,LARGEUR-1):   #le labyrinthe est entouré de mur, on peux 
+      for y in range(1,HAUTEUR-1):#les laisser à WALL_VALUE sans les vérifier
+         if(path[x][y] != 0 and path[x][y] != WALL_VALUE) :
+            path[x][y] = MAX_PATH_VALUE
+   
+   #calcul des chemin
+   isModified = True
+   while(isModified):
+      isModified = False
+
+      for x in range(1,LARGEUR-1):   #le labyrinthe est entouré de mur, pour éviter de devoir gérer 
+         for y in range(1,HAUTEUR-1):#les dépassements on peut ne regarder que les cases interieures
+            
+            if(path[x][y] == WALL_VALUE): #on ne veut pas changer les murs
+               continue
+            
+            for movements in [(1,0),(-1,0),(0,1),(0,-1)]:
+               checkedX = x+movements[0]
+               checkedY = y+movements[1]
+               if(path[x][y] > path[checkedX][checkedY]+1):
+                  path[x][y] = path[checkedX][checkedY]+1
+                  isModified = True
+               
+def pacmanMove():
+   global PacManPos
+
+   cost = 1000
+   choice = (0,0)
+
+   for move in PacManPossibleMove():
+      x = PacManPos[0] + move[0]
+      y = PacManPos[1] + move[1]
+      if(cost>GUM_PATH[x][y]):
+         cost = GUM_PATH[x][y]
+         choice = move
+
+   PacManPos[0] += choice[0]
+   PacManPos[1] += choice[1]
+   
 
 
 def IAPacman():
-   global PacManPos, Ghosts
+   
    #deplacement Pacman
-   L = PacManPossibleMove()
-   choix = random.randrange(len(L))
-   PacManPos[0] += L[choix][0]
-   PacManPos[1] += L[choix][1]
+   pacmanMove()
 
    #mengeage des gommes 
    EatingGum()
@@ -323,9 +391,7 @@ def IAPacman():
    # juste pour montrer comment on se sert de la fonction SetInfo1
    for x in range(LARGEUR):
       for y in range(HAUTEUR):
-         info = x
-         if   x % 3 == 1 : info = "+∞"
-         elif x % 3 == 2 : info = ""
+         info = GUM_PATH[x][y]
          SetInfo1(x,y,info)
    
  
