@@ -26,6 +26,14 @@ def CreateArray(L):
 GOMME = 0
 WALL = 1
 GHOST = 2
+SUPER_GUM = 3
+
+super_gum_duration = 16  # durée de l'effet de la super Pac-gomme
+super_gum_timer = 0  # compteur pour la durée de l'effet de la super Pac-gomme
+PacManNormalColor = "yellow"
+PacManEscapeColor = "red"  # couleur de Pac
+PacManChaseColor = "purple"  # couleur de Pac-Man en mode chasse
+PacManCurrentColor = PacManNormalColor
 
 
 TBL = CreateArray([
@@ -48,13 +56,19 @@ LARGEUR = TBL.shape[0]
 # placements des pacgums et des fantomes
 
 
-def PlacementsGUM():  # placements des pacgums
+def PlacementsGUM():
     GUM = np.zeros(TBL.shape, dtype=np.int32)
-
     for x in range(LARGEUR):
         for y in range(HAUTEUR):
-            if (TBL[x][y] == GOMME):
+            if TBL[x][y] == GOMME:
                 GUM[x][y] = 1
+
+    # Ajouter les super Pac-gommes aux coins
+    GUM[1][1] = SUPER_GUM
+    GUM[1][HAUTEUR - 2] = SUPER_GUM
+    GUM[LARGEUR - 2][1] = SUPER_GUM
+    GUM[LARGEUR - 2][HAUTEUR - 2] = SUPER_GUM
+
     return GUM
 
 
@@ -73,6 +87,7 @@ Ghosts.append([LARGEUR//2, HAUTEUR // 2,  "red", (0, 0)])
 
 # Initialistion du score
 score = 0
+game_over = False
 
 # Cartes des plus courts chemins
 WALL_VALUE = 1000
@@ -160,9 +175,9 @@ def keydown(e):
     global PAUSE_FLAG, LEAVE_FLAG
     if e.char == ' ':
         PAUSE_FLAG = not PAUSE_FLAG
-        print("PAUSE" if PAUSE_FLAG else "UNPAUSE")
+        # print("PAUSE" if PAUSE_FLAG else "UNPAUSE")
     if e.keysym == 'Escape':
-        print("Vous avez quitté la fenêtre")
+        # print("Vous avez quitté la fenêtre")
         LEAVE_FLAG = True
 
 
@@ -235,7 +250,7 @@ animPacman = [5, 10, 15, 10, 5]
 
 
 def Affiche(PacmanColor, message):
-    global anim_bouche
+    global anim_bouche, super_gum_timer, PacManChaseColor
 
     def CreateCircle(x, y, r, coul):
         canvas.create_oval(x-r, y-r, x+r, y+r, fill=coul, width=0)
@@ -246,7 +261,7 @@ def Affiche(PacmanColor, message):
 
     for x in range(LARGEUR-1):
         for y in range(HAUTEUR):
-            if (TBL[x][y] == WALL and TBL[x+1][y] == WALL):
+            if TBL[x][y] == WALL and TBL[x+1][y] == WALL:
                 xx = To(x)
                 xxx = To(x+1)
                 yy = To(y)
@@ -254,7 +269,7 @@ def Affiche(PacmanColor, message):
 
     for x in range(LARGEUR):
         for y in range(HAUTEUR-1):
-            if (TBL[x][y] == WALL and TBL[x][y+1] == WALL):
+            if TBL[x][y] == WALL and TBL[x][y+1] == WALL:
                 xx = To(x)
                 yy = To(y)
                 yyy = To(y+1)
@@ -263,11 +278,17 @@ def Affiche(PacmanColor, message):
     # pacgum
     for x in range(LARGEUR):
         for y in range(HAUTEUR):
-            if (GUM[x][y] == 1):
+            if GUM[x][y] == 1:
                 xx = To(x)
                 yy = To(y)
                 e = 5
                 canvas.create_oval(xx-e, yy-e, xx+e, yy+e, fill="orange")
+            elif GUM[x][y] == SUPER_GUM:
+                xx = To(x)
+                yy = To(y)
+                e = 10
+                canvas.create_oval(xx-e, yy-e, xx+e, yy+e,
+                                   fill=PacManChaseColor)
 
     # extra info
     for x in range(LARGEUR):
@@ -294,7 +315,13 @@ def Affiche(PacmanColor, message):
     anim_bouche = (anim_bouche+1) % len(animPacman)
     ouv_bouche = animPacman[anim_bouche]
     tour = 360 - 2 * ouv_bouche
-    canvas.create_oval(xx-e, yy-e, xx+e, yy+e, fill=PacmanColor)
+    pacman_color = PacmanColor
+
+    if super_gum_timer > 0:
+        if anim_bouche % 2 == 0:
+            pacman_color = PacManChaseColor  # Change la couleur de Pac-Man en mode chasse
+
+    canvas.create_oval(xx-e, yy-e, xx+e, yy+e, fill=pacman_color)
     canvas.create_polygon(xx, yy, xx+e, yy+ouv_bouche,
                           xx+e, yy-ouv_bouche, fill="black")  # bouche
 
@@ -358,46 +385,42 @@ def PacManPossibleMove():
 
 def GhostsPossibleMove(x, y, direction):
     L = []
-    if (TBL[x][y-1] != WALL):
+    # Vérifions les mouvements possibles
+    if TBL[x][y-1] != WALL:
         L.append((0, -1))
-    if (TBL[x][y+1] != WALL):
+    if TBL[x][y+1] != WALL:
         L.append((0, 1))
-    if (TBL[x+1][y] != WALL):
+    if TBL[x+1][y] != WALL:
         L.append((1, 0))
-    if (TBL[x-1][y] != WALL):
+    if TBL[x-1][y] != WALL:
         L.append((-1, 0))
 
-    print("Liste des directions possibles : " + str(L) + "\n")
-    print("direction : " + ("gauche" if direction == (-1, 0) else "droite" if direction ==
-          (1, 0) else "haut" if direction == (0, -1) else "bas") + " : " + str(direction) + "\n")
-
-    if (len(L) > 1):
-        # Évite de faire demi-tour si possible (pas en cas de cul-de-sac)
-        if (direction == (0, -1) and (0, 1) in L):
-            L.remove((0, 1))
-        if (direction == (0, 1) and (0, -1) in L):
-            L.remove((0, -1))
-        if (direction == (1, 0) and (-1, 0) in L):
-            L.remove((-1, 0))
-        if (direction == (-1, 0) and (1, 0) in L):
-            L.remove((1, 0))
-        print("Liste des directions possibles après suppression : " + str(L) + "\n")
+    if len(L) > 1:
+        # Calcul de la direction opposée pour éviter les demi-tours
+        direction_opposee = (-direction[0], -direction[1])
+        if direction_opposee in L:
+            L.remove(direction_opposee)
 
     return L
 
 
 def EatingGum():
-    global PacManPos, score
+    global PacManPos, score, super_gum_timer
 
-    if (GUM[PacManPos[0]][PacManPos[1]] == 1):
-
-        # mange la gomme
+    if GUM[PacManPos[0]][PacManPos[1]] == 1:
+        # Mange la gomme
         GUM[PacManPos[0]][PacManPos[1]] = 0
         score += 100
 
-        # actualise la carte des distance des gommes
+        # Actualise la carte des distances des gommes
         GUM_PATH[PacManPos[0]][PacManPos[1]] = MAX_PATH_VALUE
         ActualisePath(GUM_PATH)
+
+    elif GUM[PacManPos[0]][PacManPos[1]] == SUPER_GUM:
+        # Mange la super Pac-gomme
+        GUM[PacManPos[0]][PacManPos[1]] = 0
+        score += 500
+        super_gum_timer = super_gum_duration  # Active le mode chasse
 
 
 def ActualisePath(path):
@@ -429,51 +452,128 @@ def ActualisePath(path):
                         isModified = True
 
 
-def pacmanMove():
-    global PacManPos
+def updateGhostsDistances():
+    global GHOST_PATH
 
-    cost = 1000
-    choice = (0, 0)
+    # Réinitialiser les distances
+    for x in range(LARGEUR):
+        for y in range(HAUTEUR):
+            if TBL[x][y] == WALL:
+                GHOST_PATH[x][y] = WALL_VALUE
+            else:
+                GHOST_PATH[x][y] = MAX_PATH_VALUE
 
+    # Mettre les positions des fantômes à 0
+    for ghost in Ghosts:
+        GHOST_PATH[ghost[0]][ghost[1]] = 0
+
+    # Utiliser la fonction ActualisePath pour mettre à jour les distances
+    ActualisePath(GHOST_PATH)
+
+
+def choose_best_move(distance_map, compare):
+    best_cost = distance_map[PacManPos[0]][PacManPos[1]]
+    best_move = (0, 0)
     for move in PacManPossibleMove():
         x = PacManPos[0] + move[0]
         y = PacManPos[1] + move[1]
-        if (cost > GUM_PATH[x][y]):
-            cost = GUM_PATH[x][y]
-            choice = move
+        if compare(distance_map[x][y], best_cost):
+            best_cost = distance_map[x][y]
+            best_move = move
+    return best_move
 
-    PacManPos[0] += choice[0]
-    PacManPos[1] += choice[1]
+
+def pacmanMove():
+    global PacManPos, PacManCurrentColor, super_gum_timer
+
+    # Vérifier la distance actuelle de Pac-Man aux fantômes
+    ghost_distance = GHOST_PATH[PacManPos[0]][PacManPos[1]]
+    print(f"Distance de Pac-Man aux fantômes: {ghost_distance}")
+
+    PacManCurrentColor = PacManNormalColor
+    if super_gum_timer > 0:
+        # Mode "chasse aux fantômes"
+        print("Mode chasse aux fantômes")
+        best_move = choose_best_move(
+            GHOST_PATH, lambda new_cost, best_cost: new_cost < best_cost)
+    elif ghost_distance > 3:
+        # Mode "recherche des Pac-gommes"
+        print("Mode recherche des Pac-gommes")
+        best_move = choose_best_move(
+            GUM_PATH, lambda new_cost, best_cost: new_cost < best_cost)
+    else:
+        # Mode "fuite"
+        print("Mode fuite")
+        best_move = choose_best_move(
+            GHOST_PATH, lambda new_cost, best_cost: new_cost > best_cost)
+        PacManCurrentColor = PacManEscapeColor
+
+    # Mettre à jour la position de Pac-Man
+    PacManPos[0] += best_move[0]
+    PacManPos[1] += best_move[1]
+    super_gum_timer -= 1
 
 
 def IAPacman():
 
+    # Mettre à jour la carte des distances des fantômes avant de déplacer Pac-Man
+    updateGhostsDistances()
+
     # deplacement Pacman
     pacmanMove()
+    # Vérification de la collision après le déplacement de Pac-Man
+    if checkCollision():
+        return
 
     # mengeage des gommes
     EatingGum()
+
+    # actualise la carte des distances des ghosts
+    updateGhostsDistances()
 
     # juste pour montrer comment on se sert de la fonction SetInfo1
     for x in range(LARGEUR):
         for y in range(HAUTEUR):
             info = GUM_PATH[x][y]
             SetInfo1(x, y, info)
-            SetInfo2(x, y, "("+str(x)+","+str(y)+")")
+            ghost_distance = GHOST_PATH[x][y]
+            if ghost_distance != WALL_VALUE and ghost_distance != MAX_PATH_VALUE:
+                SetInfo2(x, y, ghost_distance)
+            else:
+                SetInfo2(x, y, "")
 
 
 def IAGhosts():
     # deplacement Fantome
     for F in Ghosts:
-        print(F)
-        L = GhostsPossibleMove(F[0], F[1], F[2])
-        print(L)
+        # print(F)
+        L = GhostsPossibleMove(F[0], F[1], F[3])
+        # print(L)
         choix = random.randrange(len(L))
-        print("il a choisi d'aller à " + ("gauche" if L[choix] == (-1, 0) else "droite" if L[choix] == (
-            1, 0) else "haut" if L[choix] == (0, -1) else "bas") + " : " + str(L[choix]) + "\n")
+        # print("il a choisi d'aller à " + ("gauche" if L[choix] == (-1, 0) else "droite" if L[choix] == (1, 0) else "haut" if L[choix] == (0, -1) else "bas") + " : " + str(L[choix]) + "\n")
         F[0] += L[choix][0]
         F[1] += L[choix][1]
         F[3] = L[choix]
+
+    # Vérification de la collision après le déplacement des fantômes
+    checkCollision()
+
+
+def checkCollision():
+    global game_over, score
+
+    for ghost in Ghosts:
+        if PacManPos[0] == ghost[0] and PacManPos[1] == ghost[1]:
+            if super_gum_timer > 0:
+                # Pac-Man mange le fantôme
+                score += 2000
+                # Téléporte le fantôme au centre
+                ghost[0], ghost[1] = LARGEUR // 2, HAUTEUR // 2
+            else:
+                game_over = True
+                print("Collision détectée! Jeu terminé.")
+                return True
+    return False
 
 
 #  Boucle principale de votre jeu appelée toutes les 500ms
@@ -481,19 +581,21 @@ iteration = 0
 
 
 def PlayOneTurn():
-    global iteration, score
+    global iteration, score, PacManCurrentColor
 
-    if not PAUSE_FLAG:
+    if not PAUSE_FLAG and not game_over:
         iteration += 1
         if iteration % 2 == 0:
             IAPacman()
         else:
             IAGhosts()
 
-    Affiche(PacmanColor="yellow", message="score : "+str(score))
+    message = "score : " + str(score)
+    if game_over:
+        message = "Jeu terminé! " + message
+    Affiche(PacManCurrentColor, message)
 
 
 # :
 #  demarrage de la fenetre - ne pas toucher
-
 Window.mainloop()
