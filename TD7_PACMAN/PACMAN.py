@@ -414,13 +414,13 @@ def EatingGum():
 
         # Actualise la carte des distances des gommes
         GUM_PATH[PacManPos[0]][PacManPos[1]] = MAX_PATH_VALUE
-        ActualisePath(GUM_PATH)
 
     elif GUM[PacManPos[0]][PacManPos[1]] == SUPER_GUM:
         # Mange la super Pac-gomme
         GUM[PacManPos[0]][PacManPos[1]] = 0
         score += 500
         super_gum_timer = super_gum_duration  # Active le mode chasse
+    ActualisePath(GUM_PATH)
 
 
 def ActualisePath(path):
