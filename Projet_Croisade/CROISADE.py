@@ -87,6 +87,7 @@ BLUE_PATH = initPath(np.empty([LARGEUR, HAUTEUR]), EMPTY)
 LTBL = 20
 TBL1 = [["" for i in range(LTBL)] for j in range(LTBL)]
 TBL2 = [["" for i in range(LTBL)] for j in range(LTBL)]
+TBL3 = [["" for i in range(LTBL)] for j in range(LTBL)]
 
 
 def SetInfo1(x, y, info):
@@ -101,6 +102,13 @@ def SetInfo2(x, y, info):
     if x < 0 or y < 0 or x >= LTBL or y >= LTBL:
         return
     TBL2[x][y] = info
+
+
+def SetInfo3(x, y, info):
+    info = str(info)
+    if x < 0 or y < 0 or x >= LTBL or y >= LTBL:
+        return
+    TBL3[x][y] = info
 
 
 # Partie II : AFFICHAGE
@@ -210,8 +218,8 @@ def Affiche():
             xx = To(x)
             yy = To(y) - 11
             txt = TBL1[x][y]
-            canvas.create_text(
-                xx, yy, text=txt, fill="white", font=("Purisa", 8))
+            canvas.create_text(xx, yy, text=txt, fill="red",
+                               font=("Purisa", 8))
 
     for x in range(LARGEUR):
         for y in range(HAUTEUR):
@@ -219,7 +227,15 @@ def Affiche():
             yy = To(y)
             txt = TBL2[x][y]
             canvas.create_text(
-                xx, yy, text=txt, fill="yellow", font=("Purisa", 8))
+                xx, yy, text=txt, fill="green", font=("Purisa", 8))
+
+    for x in range(LARGEUR):
+        for y in range(HAUTEUR):
+            xx = To(x) - 10
+            yy = To(y)
+            txt = TBL3[x][y]
+            canvas.create_text(
+                xx, yy, text=txt, fill="blue", font=("Purisa", 8))
 
     for team, positions in TeamPos.items():
         for pos in positions:
@@ -296,6 +312,15 @@ def updateTeamDistances():
     ActualisePath(GREEN_PATH)
     ActualisePath(BLUE_PATH)
 
+    for x in range(LARGEUR):
+        for y in range(HAUTEUR):
+            SetInfo1(x, y, RED_PATH[x][y] if RED_PATH[x]
+                     [y] != WALL_VALUE else "")
+            SetInfo2(x, y, GREEN_PATH[x][y]
+                     if GREEN_PATH[x][y] != WALL_VALUE else "")
+            SetInfo3(x, y, BLUE_PATH[x][y]
+                     if BLUE_PATH[x][y] != WALL_VALUE else "")
+
 
 def choose_best_move(pos, distance_map, compare):
     best_cost = distance_map[pos[0]][pos[1]]
@@ -367,5 +392,8 @@ def PlayOneTurn():
 
     Affiche()
 
+
+# Initial update of distances
+updateTeamDistances()
 
 Window.mainloop()
