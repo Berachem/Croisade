@@ -21,27 +21,32 @@ EMPTY = 0
 WALL = 1
 BOOST = 2
 
-boost_duration = 16  # durée de l'effet du boost
-boost_timer = {"red": 0, "green": 0, "blue": 0}
-
-TeamColors = {"red": "red", "green": "green", "blue": "blue"}
-TeamPos = {"red": [1, 1], "green": [5, 1], "blue": [1, 5]}
-
 TBL = CreateArray([
     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-    [1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1],
-    [1, 0, 0, 1, 0, 0, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1],
-    [1, 0, 1, 1, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1],
+    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1],
+    [1, 1, 0, 1, 0, 0, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1],
+    [1, 0, 1, 1, 1, 2, 1, 0, 1, 0, 0, 0, 0, 2, 0, 1, 0, 0, 0, 1],
     [1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1, 1, 1, 1, 1, 0, 1],
     [1, 0, 0, 0, 0, 0, 1, 0, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 1],
     [1, 0, 1, 1, 1, 1, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1],
-    [1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 1, 1, 0, 1],
-    [1, 0, 1, 0, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 0, 0, 1, 0, 0, 1],
-    [1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1],
+    [1, 0, 0, 0, 1, 0, 2, 0, 0, 0, 0, 1, 0, 1, 0, 1, 1, 1, 0, 1],
+    [1, 0, 1, 0, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 0, 0, 1, 0, 1, 1],
+    [1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]])
 
 HAUTEUR = TBL.shape[1]
 LARGEUR = TBL.shape[0]
+
+boost_duration = 16  # durée de l'effet du boost
+boost_timer = {"red": 0, "green": 0, "blue": 0}
+TeamColors = {"red": "red", "green": "green", "blue": "blue"}
+
+# Initial positions for each team's players
+TeamPos = {
+    "red": [[1, 1], [1, 2], [2, 2]],
+    "green": [[LARGEUR - 2, 1], [LARGEUR - 3, 2], [LARGEUR - 4, 1]],
+    "blue": [[1, HAUTEUR - 2], [1, HAUTEUR - 3], [2, HAUTEUR - 2]]
+}
 
 # placements des boosts
 
@@ -99,7 +104,7 @@ def SetInfo2(x, y, info):
 
 
 # Partie II : AFFICHAGE
-ZOOM = 40
+ZOOM = 60
 EPAISS = 8
 screeenWidth = (LARGEUR + 1) * ZOOM
 screenHeight = (HAUTEUR + 2) * ZOOM
@@ -216,14 +221,18 @@ def Affiche():
             canvas.create_text(
                 xx, yy, text=txt, fill="yellow", font=("Purisa", 8))
 
-    for team, pos in TeamPos.items():
-        xx = To(pos[0])
-        yy = To(pos[1])
-        e = 20
-        color = TeamColors[team]
-        if boost_timer[team] > 0:
-            color = "yellow"
-        canvas.create_oval(xx - e, yy - e, xx + e, yy + e, fill=color)
+    for team, positions in TeamPos.items():
+        for pos in positions:
+            xx = To(pos[0])
+            yy = To(pos[1])
+            e = 20
+            color = TeamColors[team]
+            if boost_timer[team] > 0:
+                color = "yellow"
+            canvas.create_oval(xx - e, yy - e, xx + e, yy + e, fill=color)
+            # on affiche le numéro du joueur
+            canvas.create_text(xx, yy, text=str(positions.index(pos) + 1),
+                               fill="white", font=("Purisa", 8))
 
     if PAUSE_FLAG:
         canvas.create_text(screeenWidth // 2, screenHeight - 50,
@@ -252,9 +261,9 @@ def PossibleMoves(pos):
     return L
 
 
-def EatingBoost(team):
+def EatingBoost(team, index):
     global TeamPos, boost_timer
-    x, y = TeamPos[team]
+    x, y = TeamPos[team][index]
     if BOOSTS[x][y] == 1:
         BOOSTS[x][y] = 0
         boost_timer[team] = boost_duration
@@ -288,12 +297,12 @@ def updateTeamDistances():
     ActualisePath(BLUE_PATH)
 
 
-def choose_best_move(team, distance_map, compare):
-    best_cost = distance_map[TeamPos[team][0]][TeamPos[team][1]]
+def choose_best_move(pos, distance_map, compare):
+    best_cost = distance_map[pos[0]][pos[1]]
     best_move = (0, 0)
-    for move in PossibleMoves(TeamPos[team]):
-        x = TeamPos[team][0] + move[0]
-        y = TeamPos[team][1] + move[1]
+    for move in PossibleMoves(pos):
+        x = pos[0] + move[0]
+        y = pos[1] + move[1]
         if compare(distance_map[x][y], best_cost):
             best_cost = distance_map[x][y]
             best_move = move
@@ -310,22 +319,31 @@ def moveTeam(team):
     else:  # blue
         target_distance = GREEN_PATH
 
-    best_move = choose_best_move(
-        team, target_distance, lambda new_cost, best_cost: new_cost < best_cost)
-    TeamPos[team][0] += best_move[0]
-    TeamPos[team][1] += best_move[1]
+    for i in range(len(TeamPos[team])):
+        pos = TeamPos[team][i]
+        best_move = choose_best_move(
+            pos, target_distance, lambda new_cost, best_cost: new_cost < best_cost)
+        print(f"best move for {team} player {i} : {best_move}")
+        TeamPos[team][i][0] += best_move[0]
+        TeamPos[team][i][1] += best_move[1]
+        EatingBoost(team, i)
     boost_timer[team] -= 1
 
 
 def checkCollision():
     global TeamPos
-    teams = list(TeamPos.keys())
-    for i in range(len(teams)):
-        for j in range(i+1, len(teams)):
-            if TeamPos[teams[i]] == TeamPos[teams[j]]:
-                print(f"Collision détectée entre {teams[i]} et {teams[j]}! Élimination de {teams[j]}")
-                del TeamPos[teams[j]]
-                return True
+    for team1, positions1 in TeamPos.items():
+        for team2, positions2 in TeamPos.items():
+            if team1 != team2:
+                for pos1 in positions1:
+                    for pos2 in positions2:
+                        if pos1 == pos2:
+                            print(f"Collision détectée entre {team1} et {
+                                  team2}! Élimination de {team2}")
+                            TeamPos[team2].remove(pos2)
+                            if len(TeamPos[team2]) == 0:
+                                del TeamPos[team2]
+                            return True
     return False
 
 
@@ -343,8 +361,6 @@ def PlayOneTurn():
             moveTeam("green")
         else:
             moveTeam("blue")
-        for team in list(TeamPos.keys()):
-            EatingBoost(team)
 
         if checkCollision():
             updateTeamDistances()
