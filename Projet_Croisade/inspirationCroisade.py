@@ -25,30 +25,20 @@ boost_duration = 16  # durée de l'effet du boost
 boost_timer = {"red": 0, "green": 0, "blue": 0}
 
 TeamColors = {"red": "red", "green": "green", "blue": "blue"}
-TeamPos = {"red": [1, 1], "green": [18, 1], "blue": [1, 18]}
+TeamPos = {"red": [1, 1], "green": [5, 1], "blue": [1, 5]}
 
 TBL = CreateArray([
     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-    [1, 0, 1, 1, 0, 1, 0, 1, 1, 2, 2, 1, 1, 0, 1, 0, 1, 1, 0, 1],
-    [1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1],
-    [1, 0, 1, 0, 1, 1, 0, 1, 1, 2, 2, 1, 1, 0, 1, 1, 0, 1, 0, 1],
-    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-    [1, 0, 1, 0, 1, 1, 0, 1, 1, 2, 2, 1, 1, 0, 1, 1, 0, 1, 0, 1],
-    [1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1],
-    [1, 0, 1, 1, 0, 1, 0, 1, 1, 2, 2, 1, 1, 0, 1, 0, 1, 1, 0, 1],
-    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-    [1, 0, 1, 0, 1, 1, 0, 1, 1, 2, 2, 1, 1, 0, 1, 1, 0, 1, 0, 1],
-    [1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1],
-    [1, 0, 1, 1, 0, 1, 0, 1, 1, 2, 2, 1, 1, 0, 1, 0, 1, 1, 0, 1],
-    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-    [1, 0, 1, 0, 1, 1, 0, 1, 1, 2, 2, 1, 1, 0, 1, 1, 0, 1, 0, 1],
-    [1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1],
-    [1, 0, 1, 1, 0, 1, 0, 1, 1, 2, 2, 1, 1, 0, 1, 0, 1, 1, 0, 1],
-    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-    [1, 0, 1, 0, 1, 1, 0, 1, 1, 2, 2, 1, 1, 0, 1, 1, 0, 1, 0, 1],
-    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
-])
+    [1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1],
+    [1, 0, 0, 1, 0, 0, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1],
+    [1, 0, 1, 1, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1],
+    [1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1, 1, 1, 1, 1, 0, 1],
+    [1, 0, 0, 0, 0, 0, 1, 0, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 1],
+    [1, 0, 1, 1, 1, 1, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1],
+    [1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 1, 1, 0, 1],
+    [1, 0, 1, 0, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 0, 0, 1, 0, 0, 1],
+    [1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1],
+    [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]])
 
 HAUTEUR = TBL.shape[1]
 LARGEUR = TBL.shape[0]
@@ -109,7 +99,7 @@ def SetInfo2(x, y, info):
 
 
 # Partie II : AFFICHAGE
-ZOOM = 20
+ZOOM = 40
 EPAISS = 8
 screeenWidth = (LARGEUR + 1) * ZOOM
 screenHeight = (HAUTEUR + 2) * ZOOM
@@ -171,7 +161,7 @@ Frame1 = CreerUnePage(0)
 
 canvas = tk.Canvas(Frame1, width=screeenWidth, height=screenHeight)
 canvas.place(x=0, y=0)
-canvas.configure(background='black')
+canvas.configure(background='bisque1')
 
 
 def To(coord):
@@ -192,7 +182,7 @@ def Affiche():
                 xx = To(x)
                 xxx = To(x + 1)
                 yy = To(y)
-                canvas.create_line(xx, yy, xxx, yy, width=EPAISS, fill="blue")
+                canvas.create_line(xx, yy, xxx, yy, width=EPAISS, fill="black")
 
     for x in range(LARGEUR):
         for y in range(HAUTEUR - 1):
@@ -200,7 +190,7 @@ def Affiche():
                 xx = To(x)
                 yy = To(y)
                 yyy = To(y + 1)
-                canvas.create_line(xx, yy, xx, yyy, width=EPAISS, fill="blue")
+                canvas.create_line(xx, yy, xx, yyy, width=EPAISS, fill="black")
 
     for x in range(LARGEUR):
         for y in range(HAUTEUR):
@@ -240,7 +230,7 @@ def Affiche():
                            text="UNPAUSE : PRESS SPACE", fill="red", font=PoliceTexte)
     else:
         canvas.create_text(screeenWidth // 2, screenHeight - 50,
-                           text="PAUSE : PRESS SPACE", fill="yellow", font=PoliceTexte)
+                           text="PAUSE : PRESS SPACE", fill="black", font=PoliceTexte)
 
 
 AfficherPage(0)
@@ -333,8 +323,7 @@ def checkCollision():
     for i in range(len(teams)):
         for j in range(i+1, len(teams)):
             if TeamPos[teams[i]] == TeamPos[teams[j]]:
-                print(f"Collision détectée entre {teams[i]} et {
-                      teams[j]}! Élimination de {teams[j]}")
+                print(f"Collision détectée entre {teams[i]} et {teams[j]}! Élimination de {teams[j]}")
                 del TeamPos[teams[j]]
                 return True
     return False
