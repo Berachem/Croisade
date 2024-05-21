@@ -420,6 +420,10 @@ def EatingGum():
         GUM[PacManPos[0]][PacManPos[1]] = 0
         score += 500
         super_gum_timer = super_gum_duration  # Active le mode chasse
+
+        # Actualise la carte des distances des gommes
+        GUM_PATH[PacManPos[0]][PacManPos[1]] = MAX_PATH_VALUE
+    
     ActualisePath(GUM_PATH)
 
 
@@ -465,7 +469,10 @@ def updateGhostsDistances():
 
     # Mettre les positions des fantômes à 0
     for ghost in Ghosts:
-        GHOST_PATH[ghost[0]][ghost[1]] = 0
+        if TBL[ghost[0]][ghost[1]] != 2 : #on ne prend pas en compte les fantomes dans leur spawn
+            GHOST_PATH[ghost[0]][ghost[1]] = 0
+    
+        
 
     # Utiliser la fonction ActualisePath pour mettre à jour les distances
     ActualisePath(GHOST_PATH)
