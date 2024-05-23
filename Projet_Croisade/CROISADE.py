@@ -311,6 +311,12 @@ def ActualisePath(path):
 
 def updateTeamDistances():
     global RED_PATH, GREEN_PATH, BLUE_PATH
+    #reset distance
+    RED_PATH = initPath(RED_PATH,RED)
+    GREEN_PATH = initPath(GREEN_PATH,GREEN)
+    BLUE_PATH = initPath(BLUE_PATH,BLUE)
+
+    #actualisation
     ActualisePath(RED_PATH)
     ActualisePath(GREEN_PATH)
     ActualisePath(BLUE_PATH)
@@ -389,8 +395,9 @@ def PlayOneTurn():
         else:
             moveTeam("blue")
 
-        if checkCollision():
-            updateTeamDistances()
+    #faudra actualiser la carte en fonction des mouvements de tout le monde de toute façon
+    checkCollision()
+    updateTeamDistances()
 
     Affiche()
 
