@@ -20,18 +20,21 @@ def CreateArray(L):
 EMPTY = 0
 WALL = 1
 BOOST = 2
+RED = 3
+GREEN = 4
+BLUE = 5
 
 TBL = CreateArray([
     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-    [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1],
-    [1, 1, 0, 1, 0, 0, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1],
-    [1, 0, 1, 1, 1, 2, 1, 0, 1, 0, 0, 0, 0, 2, 0, 1, 0, 0, 0, 1],
+    [1, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 1, 4, 1],
+    [1, 1, 3, 1, 0, 0, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1],
+    [1, 0, 0, 1, 1, 2, 1, 0, 1, 0, 0, 0, 0, 2, 0, 1, 0, 4, 0, 1],
     [1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1, 1, 1, 1, 1, 0, 1],
     [1, 0, 0, 0, 0, 0, 1, 0, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 1],
     [1, 0, 1, 1, 1, 1, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1],
-    [1, 0, 0, 0, 1, 0, 2, 0, 0, 0, 0, 1, 0, 1, 0, 1, 1, 1, 0, 1],
-    [1, 0, 1, 0, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 0, 0, 1, 0, 1, 1],
-    [1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+    [1, 0, 0, 0, 1, 0, 2, 0, 0, 0, 0, 1, 0, 1, 0, 1, 1, 0, 0, 1],
+    [1, 5, 1, 0, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 0, 0, 1, 0, 1, 1],
+    [1, 5, 1, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]])
 
 HAUTEUR = TBL.shape[1]
@@ -43,9 +46,9 @@ TeamColors = {"red": "red", "green": "green", "blue": "blue"}
 
 # Initial positions for each team's players
 TeamPos = {
-    "red": [[1, 1], [1, 2], [2, 2]],
-    "green": [[LARGEUR - 2, 1], [LARGEUR - 3, 2], [LARGEUR - 4, 1]],
-    "blue": [[1, HAUTEUR - 2], [1, HAUTEUR - 3], [2, HAUTEUR - 2]]
+    "red": [[1, 1], [2, 1], [2, 2]],
+    "green": [[LARGEUR - 2, 1], [LARGEUR - 3, 3], [LARGEUR - 4, 1]],
+    "blue": [[1, HAUTEUR - 2], [1, HAUTEUR - 3], [3, HAUTEUR - 2]]
 }
 
 # placements des boosts
@@ -79,9 +82,9 @@ def initPath(path, checked_value):
     return path
 
 
-RED_PATH = initPath(np.empty([LARGEUR, HAUTEUR]), EMPTY)
-GREEN_PATH = initPath(np.empty([LARGEUR, HAUTEUR]), EMPTY)
-BLUE_PATH = initPath(np.empty([LARGEUR, HAUTEUR]), EMPTY)
+RED_PATH = initPath(np.empty([LARGEUR, HAUTEUR]), RED)
+GREEN_PATH = initPath(np.empty([LARGEUR, HAUTEUR]), GREEN)
+BLUE_PATH = initPath(np.empty([LARGEUR, HAUTEUR]), BLUE)
 
 # Debug info affichage
 LTBL = 20
@@ -112,7 +115,7 @@ def SetInfo3(x, y, info):
 
 
 # Partie II : AFFICHAGE
-ZOOM = 60
+ZOOM = 40
 EPAISS = 8
 screeenWidth = (LARGEUR + 1) * ZOOM
 screenHeight = (HAUTEUR + 2) * ZOOM
@@ -331,7 +334,7 @@ def choose_best_move(pos, distance_map, compare):
         if compare(distance_map[x][y], best_cost):
             best_cost = distance_map[x][y]
             best_move = move
-    return best_move
+    return (0,0) #best_move #pour l'instant ils sont immobiles
 
 
 def moveTeam(team):
@@ -363,8 +366,7 @@ def checkCollision():
                 for pos1 in positions1:
                     for pos2 in positions2:
                         if pos1 == pos2:
-                            print(f"Collision détectée entre {team1} et {
-                                  team2}! Élimination de {team2}")
+                            print(f"Collision détectée entre {team1} et {team2}! Élimination de {team2}")
                             TeamPos[team2].remove(pos2)
                             if len(TeamPos[team2]) == 0:
                                 del TeamPos[team2]
