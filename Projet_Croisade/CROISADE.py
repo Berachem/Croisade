@@ -42,7 +42,7 @@ LARGEUR = TBL.shape[0]
 
 boost_duration = 16  # durée de l'effet du boost
 boost_timer = {RED: 0, GREEN: 0, BLUE: 0}
-TeamColors = {RED: "red", GREEN: "green", BLUE: "blue"}
+TeamColors = {RED: "coral", GREEN: "darkolivegreen1", BLUE: "cadetblue"}
 
 # Initial positions for each team's players
 TeamPos = {
@@ -216,6 +216,19 @@ def Affiche():
                 e = 10
                 canvas.create_oval(xx-e, yy-e, xx+e, yy+e, fill="purple")
 
+    for team, positions in TeamPos.items():
+        for pos in positions:
+            xx = To(pos[0])
+            yy = To(pos[1])
+            e = 20
+            color = TeamColors[team]
+            if boost_timer[team] > 0:
+                color = "yellow"
+            canvas.create_oval(xx - e, yy - e, xx + e, yy + e, fill=color)
+            # on affiche le numéro du joueur
+            canvas.create_text(xx, yy, text=str(positions.index(pos) + 1),
+                               fill="white", font=("Purisa", 8))
+            
     for x in range(LARGEUR):
         for y in range(HAUTEUR):
             xx = To(x)
@@ -240,19 +253,6 @@ def Affiche():
             canvas.create_text(
                 xx, yy, text=txt, fill="blue", font=("Purisa", 8))
 
-    for team, positions in TeamPos.items():
-        for pos in positions:
-            xx = To(pos[0])
-            yy = To(pos[1])
-            e = 20
-            color = TeamColors[team]
-            if boost_timer[team] > 0:
-                color = "yellow"
-            canvas.create_oval(xx - e, yy - e, xx + e, yy + e, fill=color)
-            # on affiche le numéro du joueur
-            canvas.create_text(xx, yy, text=str(positions.index(pos) + 1),
-                               fill="white", font=("Purisa", 8))
-
     if PAUSE_FLAG:
         canvas.create_text(screeenWidth // 2, screenHeight - 50,
                            text="UNPAUSE : PRESS SPACE", fill="red", font=PoliceTexte)
@@ -266,17 +266,18 @@ AfficherPage(0)
 # Partie III : Gestion de partie
 
 
-def PossibleMoves(pos):
+def PossibleMoves(pos, team):
     L = []
     x, y = pos
-    if TBL[x][y - 1] == EMPTY:
+    if TBL[x][y - 1] != WALL and TBL[x][y - 1] != team:
         L.append((0, -1))
-    if TBL[x][y + 1] == EMPTY:
+    if TBL[x][y + 1] != WALL and TBL[x][y + 1] != team:
         L.append((0, 1))
-    if TBL[x + 1][y] == EMPTY:
+    if TBL[x + 1][y] != WALL and TBL[x + 1][y] != team:
         L.append((1, 0))
-    if TBL[x - 1][y] == EMPTY:
-        L.append((-1, 0))
+    if TBL[x - 1][y] != WALL and TBL[x - 1][y] != team:
+        L.append((-1, 0))   
+    L.append((0,0)) #les fuyards pourrais vouloir rester sur place
     return L
 
 
@@ -331,10 +332,10 @@ def updateTeamDistances():
                      if BLUE_PATH[x][y] != WALL_VALUE else "")
 
 
-def choose_best_move(pos, distance_map, worst_cost, compare):
+def choose_best_move(team,pos, distance_map, worst_cost, compare):
     best_cost = worst_cost
     best_move = (0, 0)
-    for move in PossibleMoves(pos):
+    for move in PossibleMoves(pos,team):
         x = pos[0] + move[0]
         y = pos[1] + move[1]
         if compare(distance_map[x][y], best_cost):
@@ -365,7 +366,7 @@ def moveTeam(team):
         worst_cost = MAX_PATH_VALUE
 
     for position in TeamPos[team]:
-        best_move = choose_best_move(position, target_distance, worst_cost, behavior)
+        best_move = choose_best_move(team, position, target_distance, worst_cost, behavior)
         #print(f"best move for {team} player {i} : {best_move}")
         TBL[position[0]][position[1]] = 0 #le joueur n'est plus sur la case
         position[0] += best_move[0]
