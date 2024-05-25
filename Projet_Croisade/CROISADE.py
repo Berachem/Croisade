@@ -331,13 +331,13 @@ def updateTeamDistances():
                      if BLUE_PATH[x][y] != WALL_VALUE else "")
 
 
-def choose_best_move(pos, distance_map, compare):
-    best_cost = -1
+def choose_best_move(pos, distance_map, worst_cost, compare):
+    best_cost = worst_cost
     best_move = (0, 0)
     for move in PossibleMoves(pos):
         x = pos[0] + move[0]
         y = pos[1] + move[1]
-        if best_cost == -1 or compare(distance_map[x][y], best_cost):
+        if compare(distance_map[x][y], best_cost):
             best_cost = distance_map[x][y]
             best_move = move
     return best_move
@@ -354,15 +354,18 @@ def moveTeam(team):
     if team == RED:
         target_distance = BLUE_PATH #ils chassent les bleus
         behavior = runForwardtheEnnemy
+        worst_cost = MAX_PATH_VALUE
     elif team == GREEN:
         target_distance = BLUE_PATH #ils fuient les bleus
         behavior = fleeFromTheEnnemy
+        worst_cost = 0
     else:  # blue
         target_distance = GREEN_PATH #ils chassent les verts
         behavior = runForwardtheEnnemy
+        worst_cost = MAX_PATH_VALUE
 
     for position in TeamPos[team]:
-        best_move = choose_best_move(position, target_distance, behavior)
+        best_move = choose_best_move(position, target_distance, worst_cost, behavior)
         #print(f"best move for {team} player {i} : {best_move}")
         TBL[position[0]][position[1]] = 0 #le joueur n'est plus sur la case
         position[0] += best_move[0]
@@ -405,8 +408,9 @@ def PlayOneTurn():
 
     #faudra actualiser la carte en fonction des mouvements de tout le monde de toute façon
     #checkCollision()
-    Affiche()
     updateTeamDistances()
+    Affiche()
+    
 
     
 
