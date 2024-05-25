@@ -352,43 +352,50 @@ def fleeFromTheEnnemy(new_cost,best_cost) :
 def moveTeam(team):
     global TeamPos, boost_timer,TBL
 
+    #red -> green -> blue
     if team == RED:
-        target_distance = BLUE_PATH #ils chassent les bleus
+        target_distance = GREEN_PATH #ils chassent les vert
         behavior = runForwardtheEnnemy
         worst_cost = MAX_PATH_VALUE
     elif team == GREEN:
-        target_distance = BLUE_PATH #ils fuient les bleus
+        target_distance = RED_PATH #ils fuient les rouge
         behavior = fleeFromTheEnnemy
         worst_cost = 0
     else:  # blue
-        target_distance = GREEN_PATH #ils chassent les verts
+        target_distance = RED_PATH #ils chassent les rouge
         behavior = runForwardtheEnnemy
         worst_cost = MAX_PATH_VALUE
 
     for position in TeamPos[team]:
         best_move = choose_best_move(team, position, target_distance, worst_cost, behavior)
-        #print(f"best move for {team} player {i} : {best_move}")
-        TBL[position[0]][position[1]] = 0 #le joueur n'est plus sur la case
-        position[0] += best_move[0]
-        position[1] += best_move[1]
-        TBL[position[0]][position[1]] = team #le joueur est sur la nouvelle case
+        old_pos = [position[0],position[1]]
+        new_pos = [position[0]+best_move[0],position[1]+best_move[1]]
+
+        if not checkCollision(old_pos,new_pos,team) :
+            TBL[old_pos[0],old_pos[1]] = 0    #le joueur n'est plus sur la case
+            TBL[new_pos[0],new_pos[1]] = team #le joueur est sur la nouvelle case
+            position[0] = new_pos[0]
+            position[1] = new_pos[1]
+
         #EatingBoost(team, position)
     boost_timer[team] -= 1
 
 
-def checkCollision():
+def checkCollision(old_pos,new_pos,team):
     global TeamPos
-    for team1, positions1 in TeamPos.items():
-        for team2, positions2 in TeamPos.items():
-            if team1 != team2:
-                for pos1 in positions1:
-                    for pos2 in positions2:
-                        if pos1 == pos2:
-                            print(f"Collision détectée entre {team1} et {team2}! Élimination de {team2}")
-                            TeamPos[team2].remove(pos2)
-                            if len(TeamPos[team2]) == 0:
-                                del TeamPos[team2]
-                            return True
+
+    tile_value = TBL[new_pos[0],new_pos[1]]
+
+    if  tile_value != EMPTY :
+        if (team % BLUE) < tile_value : #Si x % max < y alors x mange y (j'ai vérifié ça marche)
+            for position in TeamPos[team] :
+                if position == new_pos :
+                    TeamPos[tile_value].remove(position)
+                    return True
+        elif (tile_value % BLUE < team) : #on vérifie dans les deux sens
+            TeamPos[team].remove(old_pos)
+            return True
+            
     return False
 
 
