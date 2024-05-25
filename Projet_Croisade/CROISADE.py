@@ -41,19 +41,19 @@ HAUTEUR = TBL.shape[1]
 LARGEUR = TBL.shape[0]
 
 boost_duration = 16  # durée de l'effet du boost
-boost_timer = {"red": 0, "green": 0, "blue": 0}
-TeamColors = {"red": "red", "green": "green", "blue": "blue"}
+boost_timer = {RED: 0, GREEN: 0, BLUE: 0}
+TeamColors = {RED: "red", GREEN: "green", BLUE: "blue"}
 
 # Initial positions for each team's players
 TeamPos = {
-    "red": [[1, 1], [2, 1], [2, 2]],
-    "green": [[LARGEUR - 2, 1], [LARGEUR - 3, 3], [LARGEUR - 4, 1]],
-    "blue": [[1, HAUTEUR - 2], [1, HAUTEUR - 3], [3, HAUTEUR - 2]]
+    RED : [[1, 1], [2, 1], [2, 2]],
+    GREEN : [[LARGEUR - 2, 1], [LARGEUR - 3, 3], [LARGEUR - 4, 1]],
+    BLUE : [[1, HAUTEUR - 2], [1, HAUTEUR - 3], [3, HAUTEUR - 2]]
 }
 
 # placements des boosts
 
-
+#utile ? on pourrait faire disparaitre les boost directement du TBL ?
 def PlacementsBoost():
     BOOSTS = np.zeros(TBL.shape, dtype=np.int32)
     for x in range(LARGEUR):
@@ -280,9 +280,9 @@ def PossibleMoves(pos):
     return L
 
 
-def EatingBoost(team, index):
+def EatingBoost(team, position):
     global TeamPos, boost_timer
-    x, y = TeamPos[team][index]
+    x, y = position
     if BOOSTS[x][y] == 1:
         BOOSTS[x][y] = 0
         boost_timer[team] = boost_duration
@@ -332,35 +332,43 @@ def updateTeamDistances():
 
 
 def choose_best_move(pos, distance_map, compare):
-    best_cost = distance_map[pos[0]][pos[1]]
+    best_cost = -1
     best_move = (0, 0)
     for move in PossibleMoves(pos):
         x = pos[0] + move[0]
         y = pos[1] + move[1]
-        if compare(distance_map[x][y], best_cost):
+        if best_cost == -1 or compare(distance_map[x][y], best_cost):
             best_cost = distance_map[x][y]
             best_move = move
-    return (0,0) #best_move #pour l'instant ils sont immobiles
+    return best_move
 
+def runForwardtheEnnemy(new_cost,best_cost) :
+    return new_cost < best_cost
+
+def fleeFromTheEnnemy(new_cost,best_cost) :
+    return new_cost > best_cost
 
 def moveTeam(team):
-    global TeamPos, boost_timer
+    global TeamPos, boost_timer,TBL
 
-    if team == "red":
-        target_distance = BLUE_PATH
-    elif team == "green":
-        target_distance = RED_PATH
+    if team == RED:
+        target_distance = BLUE_PATH #ils chassent les bleus
+        behavior = runForwardtheEnnemy
+    elif team == GREEN:
+        target_distance = BLUE_PATH #ils fuient les bleus
+        behavior = fleeFromTheEnnemy
     else:  # blue
-        target_distance = GREEN_PATH
+        target_distance = GREEN_PATH #ils chassent les verts
+        behavior = runForwardtheEnnemy
 
-    for i in range(len(TeamPos[team])):
-        pos = TeamPos[team][i]
-        best_move = choose_best_move(
-            pos, target_distance, lambda new_cost, best_cost: new_cost < best_cost)
-        print(f"best move for {team} player {i} : {best_move}")
-        TeamPos[team][i][0] += best_move[0]
-        TeamPos[team][i][1] += best_move[1]
-        EatingBoost(team, i)
+    for position in TeamPos[team]:
+        best_move = choose_best_move(position, target_distance, behavior)
+        #print(f"best move for {team} player {i} : {best_move}")
+        TBL[position[0]][position[1]] = 0 #le joueur n'est plus sur la case
+        position[0] += best_move[0]
+        position[1] += best_move[1]
+        TBL[position[0]][position[1]] = team #le joueur est sur la nouvelle case
+        #EatingBoost(team, position)
     boost_timer[team] -= 1
 
 
@@ -389,17 +397,18 @@ def PlayOneTurn():
     if not PAUSE_FLAG:
         iteration += 1
         if iteration % 3 == 0:
-            moveTeam("red")
+            moveTeam(RED)
         elif iteration % 3 == 1:
-            moveTeam("green")
+            moveTeam(GREEN)
         else:
-            moveTeam("blue")
+            moveTeam(BLUE)
 
     #faudra actualiser la carte en fonction des mouvements de tout le monde de toute façon
-    checkCollision()
+    #checkCollision()
+    Affiche()
     updateTeamDistances()
 
-    Affiche()
+    
 
 
 # Initial update of distances
