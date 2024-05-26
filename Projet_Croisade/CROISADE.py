@@ -126,6 +126,8 @@ Window.title("Jeu de Croisade")
 
 PAUSE_FLAG = False
 LEAVE_FLAG = False
+END_FLAG = False
+WINNER = None
 
 
 def keydown(e):
@@ -256,6 +258,9 @@ def Affiche():
     if PAUSE_FLAG:
         canvas.create_text(screeenWidth // 2, screenHeight - 50,
                            text="UNPAUSE : PRESS SPACE", fill="red", font=PoliceTexte)
+    elif END_FLAG:
+        canvas.create_text(screeenWidth // 2, screenHeight - 50,
+                           text="FIN DE PARTIE : L'EQUIPE GAGNATE EST " + WINNER, fill="green", font=PoliceTexte)
     else:
         canvas.create_text(screeenWidth // 2, screenHeight - 50,
                            text="PAUSE : PRESS SPACE", fill="black", font=PoliceTexte)
@@ -380,7 +385,6 @@ def moveTeam(team):
         #EatingBoost(team, position)
     boost_timer[team] -= 1
 
-
 def checkCollision(old_pos,new_pos,team):
     global TeamPos
 
@@ -399,6 +403,19 @@ def checkCollision(old_pos,new_pos,team):
             
     return False
 
+def checkWin():
+    global END_FLAG,WINNER
+
+    for team,pos in TeamPos.items() :
+        if len(pos) == 0 :
+            END_FLAG = True
+
+            if team == RED :
+                WINNER = "BLUE"
+            elif team == GREEN :
+                WINNER = "RED"
+            elif team == BLUE :
+                WINNER = "GREEN"
 
 iteration = 0
 
@@ -406,7 +423,7 @@ iteration = 0
 def PlayOneTurn():
     global iteration
 
-    if not PAUSE_FLAG:
+    if not PAUSE_FLAG and not END_FLAG:
         iteration += 1
         if iteration % 3 == 0:
             moveTeam(RED)
@@ -414,10 +431,13 @@ def PlayOneTurn():
             moveTeam(GREEN)
         else:
             moveTeam(BLUE)
+        
+        checkWin()
+        updateTeamDistances()
+
 
     #faudra actualiser la carte en fonction des mouvements de tout le monde de toute façon
-    #checkCollision()
-    updateTeamDistances()
+    
     Affiche()
     
 
