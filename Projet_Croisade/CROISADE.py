@@ -388,9 +388,10 @@ def checkCollision(old_pos,new_pos,team):
 
     if  tile_value != EMPTY and tile_value != team:
         if (team % BLUE) < tile_value : #Si x % max < y alors x mange y (j'ai vérifié ça marche)
-            for position in TeamPos[team] :
+            for position in TeamPos[tile_value] :
                 if position == new_pos :
                     TeamPos[tile_value].remove(position)
+                    TBL[position[0]][position[1]] = EMPTY #on oublie pas de remettre la case à 0
                     return True
         elif (tile_value % BLUE < team) : #on vérifie dans les deux sens
             TeamPos[team].remove(old_pos)
