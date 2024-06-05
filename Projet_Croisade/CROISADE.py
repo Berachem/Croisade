@@ -23,18 +23,19 @@ BOOST = 2
 RED = 3
 GREEN = 4
 BLUE = 5
+NEUTRAL_SPAWN = 6 
 
 TBL = CreateArray([
     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-    [1, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 1, 4, 1],
-    [1, 1, 3, 1, 0, 0, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 0, 1, 0, 1],
-    [1, 0, 0, 1, 1, 2, 1, 0, 1, 0, 0, 0, 0, 2, 0, 1, 0, 4, 0, 1],
-    [1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1, 1, 1, 1, 1, 0, 1],
+    [1, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 4, 1],
+    [1, 0, 3, 1, 0, 0, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 0, 0, 0, 1],
+    [1, 0, 0, 1, 1, 2, 1, 0, 0, 0, 0, 0, 0, 2, 0, 1, 0, 4, 0, 1],
+    [1, 0, 0, 1, 0, 0, 1, 0, 0, 6, 0, 1, 0, 1, 1, 1, 1, 1, 0, 1],
     [1, 0, 0, 0, 0, 0, 1, 0, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 1],
-    [1, 0, 1, 1, 1, 1, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1],
-    [1, 0, 0, 0, 1, 0, 2, 0, 0, 0, 0, 1, 0, 1, 0, 1, 1, 0, 0, 1],
-    [1, 5, 1, 0, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 0, 0, 1, 0, 1, 1],
-    [1, 5, 1, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+    [1, 0, 1, 1, 1, 1, 1, 0, 6, 1, 6, 0, 0, 1, 0, 0, 1, 0, 0, 1],
+    [1, 0, 0, 0, 1, 0, 2, 0, 0, 0, 0, 0, 3, 1, 0, 1, 1, 0, 0, 1],
+    [1, 5, 0, 0, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 0, 0, 1, 0, 0, 1],
+    [1, 5, 0, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]])
 
 HAUTEUR = TBL.shape[1]
@@ -47,11 +48,32 @@ TeamNames = {RED: "RED", GREEN: "GREEN", BLUE: "BLUE"}
 
 # Initial positions for each team's players
 TeamPos = {
-    BLUE: [[1, 1], [2, 1], [2, 2]],
-    GREEN: [[LARGEUR - 2, 1], [LARGEUR - 3, 3], [LARGEUR - 4, 1]],
-    RED: [[LARGEUR//2, HAUTEUR - 2], [LARGEUR//2-1,
-                                      HAUTEUR - 3], [LARGEUR//2+1, HAUTEUR - 2]]
+    BLUE: [[1, 1], [7, 3], [13, 9]],
+    GREEN: [[LARGEUR - 2, 1], [5,9], [17, 7]],
+    RED: [[
+        10,1], 
+          [1,7], 
+          [12, HAUTEUR - 4]]
 }
+dead_players = []
+
+# Fonction pour mélanger les positions de toutes les équipes
+def shuffleAllTeamPositions():
+    all_positions = []
+    for positions in TeamPos.values():
+        all_positions.extend(positions)
+    random.shuffle(all_positions)
+    
+    # Réassigner les positions mélangées aux équipes
+    index = 0
+    for team in TeamPos:
+        for i in range(len(TeamPos[team])):
+            TeamPos[team][i] = all_positions[index]
+            index += 1
+
+# Appelez cette fonction avant le début de la partie
+shuffleAllTeamPositions()
+
 
 # placements des boosts
 
@@ -101,7 +123,8 @@ def SetInfo1(x, y, info):
     info = str(info)
     if x < 0 or y < 0 or x >= LTBL or y >= LTBL:
         return
-    TBL1[x][y] = info
+    #TBL1[x][y] = info
+    TBL1[x][y] = "(" + str(x) + "," + str(y) + ")"
 
 
 def SetInfo2(x, y, info):
@@ -135,8 +158,8 @@ WINNER = None
 
 
 def keydown(e):
-    global PAUSE_FLAG, LEAVE_FLAG
-    if e.char == ' ':
+    global PAUSE_FLAG, LEAVE_FLAG, END_FLAG
+    if e.char == ' ' and not END_FLAG:
         PAUSE_FLAG = not PAUSE_FLAG
     if e.keysym == 'Escape':
         LEAVE_FLAG = True
@@ -183,11 +206,13 @@ Frame1 = CreerUnePage(0)
 
 canvas = tk.Canvas(Frame1, width=screeenWidth, height=screenHeight)
 canvas.place(x=0, y=0)
-canvas.configure(background='bisque1')
+canvas.configure(background='black')
 
 
 def To(coord):
     return coord * ZOOM + ZOOM
+
+
 
 
 def Affiche():
@@ -195,6 +220,13 @@ def Affiche():
 
     def CreateCircle(x, y, r, coul):
         canvas.create_oval(x-r, y-r, x+r, y+r, fill=coul, width=0)
+        
+    def CreateCross(x, y, size, color, outline):
+        half_size = size / 2
+        canvas.create_line(x - half_size, y - half_size, x + half_size, y + half_size, fill=color, width=EPAISS)
+        canvas.create_line(x + half_size, y - half_size, x - half_size, y + half_size, fill=color, width=EPAISS)
+        canvas.create_line(x - half_size, y - half_size, x + half_size, y + half_size, fill=outline, width=EPAISS//2)
+        canvas.create_line(x + half_size, y - half_size, x - half_size, y + half_size, fill=outline, width=EPAISS//2)
 
     canvas.delete("all")
 
@@ -204,7 +236,7 @@ def Affiche():
                 xx = To(x)
                 xxx = To(x + 1)
                 yy = To(y)
-                canvas.create_line(xx, yy, xxx, yy, width=EPAISS, fill="black")
+                canvas.create_line(xx, yy, xxx, yy, width=EPAISS, fill="white")
 
     for x in range(LARGEUR):
         for y in range(HAUTEUR - 1):
@@ -212,7 +244,7 @@ def Affiche():
                 xx = To(x)
                 yy = To(y)
                 yyy = To(y + 1)
-                canvas.create_line(xx, yy, xx, yyy, width=EPAISS, fill="black")
+                canvas.create_line(xx, yy, xx, yyy, width=EPAISS, fill="white")
 
     for x in range(LARGEUR):
         for y in range(HAUTEUR):
@@ -221,6 +253,10 @@ def Affiche():
                 yy = To(y)
                 e = 10
                 canvas.create_oval(xx-e, yy-e, xx+e, yy+e, fill="purple")
+    for (x, y, color) in dead_players:
+        xx = To(x)
+        yy = To(y)
+        CreateCross(xx, yy, 30, "grey", color)
 
     for team, positions in TeamPos.items():
         for pos in positions:
@@ -230,7 +266,8 @@ def Affiche():
             color = TeamColors[team]
             outline = color
             if boost_timer[team] > 0:
-                outline = "yellow"
+                # outline = "yellow"
+                pass
             canvas.create_oval(xx - e, yy - e, xx + e, yy +
                                e, fill=color, outline=outline)
             # on affiche le numéro du joueur
@@ -269,7 +306,7 @@ def Affiche():
                            text="FIN DE PARTIE : L'EQUIPE GAGNANTE EST " + WINNER, fill="green", font=PoliceTexte)
     else:
         canvas.create_text(screeenWidth // 2, screenHeight - 50,
-                           text="PAUSE : PRESS SPACE", fill="black", font=PoliceTexte)
+                           text="PAUSE : PRESS SPACE", fill="white", font=PoliceTexte)
 
 
 AfficherPage(0)
@@ -335,12 +372,14 @@ def updateTeamDistances():
 
     for x in range(LARGEUR):
         for y in range(HAUTEUR):
+            """
             SetInfo1(x, y, RED_PATH[x][y] if RED_PATH[x]
                      [y] != WALL_VALUE else "")
             SetInfo2(x, y, GREEN_PATH[x][y]
                      if GREEN_PATH[x][y] != WALL_VALUE else "")
             SetInfo3(x, y, BLUE_PATH[x][y]
                      if BLUE_PATH[x][y] != WALL_VALUE else "")
+                     """
 
 
 def choose_best_move(team, pos, distance_map, worst_cost, compare):
@@ -398,21 +437,25 @@ def moveTeam(team):
 
 
 def checkCollision(old_pos, new_pos, team):
-    global TeamPos, TeamNames
+    global TeamPos, TeamNames, dead_players
 
     tile_value = TBL[new_pos[0], new_pos[1]]
 
     if tile_value != EMPTY and tile_value != team:
         if tile_value != BOOST:
-            if (team % BLUE) < tile_value:  # Si x % max < y alors x mange y (j'ai vérifié ça marche)
+            if tile_value in TeamPos and (team % BLUE) < tile_value:  # Si x % max < y alors x mange y (j'ai vérifié ça marche)
                 for position in TeamPos[tile_value]:
                     if position == new_pos:
                         TeamPos[tile_value].remove(position)
+                        print(TeamNames[team] + " ate " + TeamNames[tile_value] + " at " + str(new_pos) + " !")
+                        dead_players.append((new_pos[0], new_pos[1], TeamColors[tile_value]))
                         # on oublie pas de remettre la case à 0
                         TBL[position[0]][position[1]] = EMPTY
                         return True
-            elif (tile_value % BLUE < team):  # on vérifie dans les deux sens
+            elif tile_value in TeamNames and (tile_value % BLUE < team):  # on vérifie dans les deux sens
                 TeamPos[team].remove(old_pos)
+                print(TeamNames[tile_value] + " ate " + TeamNames[team] + " at " + str(new_pos) + " !")
+                dead_players.append((old_pos[0], old_pos[1], TeamColors[team]))
                 return True
         else:
             # on mange le boost et ça fait des effets à définir TODO
@@ -421,9 +464,16 @@ def checkCollision(old_pos, new_pos, team):
             # on oublie pas de remettre la case à 0
             TBL[new_pos[0]][new_pos[1]] = EMPTY
 
-            pass
+            # on fait spawn un joueur de l'équipe qui a mangé le boost dans une case NEUTRAL_SPAWN (6) aléatoire de la carte
+            possible_spawn = [(x, y) for x in range(LARGEUR) for y in range(HAUTEUR) if TBL[x][y] == NEUTRAL_SPAWN]
+            if possible_spawn:
+                spawn_pos = random.choice(possible_spawn)
+                TBL[spawn_pos[0]][spawn_pos[1]] = team
+                TeamPos[team].append(list(spawn_pos))
+                print("Player spawned at " + str(spawn_pos) + " (team " + TeamNames[team] + ") !")
 
     return False
+
 
 
 def checkWin():
