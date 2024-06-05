@@ -266,7 +266,7 @@ def Affiche():
                            text="UNPAUSE : PRESS SPACE", fill="red", font=PoliceTexte)
     elif END_FLAG:
         canvas.create_text(screeenWidth // 2, screenHeight - 50,
-                           text="FIN DE PARTIE : L'EQUIPE GAGNATE EST " + WINNER, fill="green", font=PoliceTexte)
+                           text="FIN DE PARTIE : L'EQUIPE GAGNANTE EST " + WINNER, fill="green", font=PoliceTexte)
     else:
         canvas.create_text(screeenWidth // 2, screenHeight - 50,
                            text="PAUSE : PRESS SPACE", fill="black", font=PoliceTexte)
