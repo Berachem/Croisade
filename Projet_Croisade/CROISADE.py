@@ -50,10 +50,7 @@ TeamNames = {RED: "RED", GREEN: "GREEN", BLUE: "BLUE"}
 TeamPos = {
     BLUE: [[1, 1], [7, 3], [13, 9]],
     GREEN: [[LARGEUR - 2, 1], [5,9], [17, 7]],
-    RED: [[
-        10,1], 
-          [1,7], 
-          [12, HAUTEUR - 4]]
+    RED: [[10,1], [1,7], [12, HAUTEUR - 4]]
 }
 dead_players = []
 
@@ -443,7 +440,7 @@ def checkCollision(old_pos, new_pos, team):
 
     if tile_value != EMPTY and tile_value != team:
         if tile_value != BOOST:
-            if tile_value in TeamPos and (team % BLUE) < tile_value:  # Si x % max < y alors x mange y (j'ai vérifié ça marche)
+            if tile_value in TeamPos and (team - tile_value)%3 == 2:  
                 for position in TeamPos[tile_value]:
                     if position == new_pos:
                         TeamPos[tile_value].remove(position)
@@ -452,7 +449,7 @@ def checkCollision(old_pos, new_pos, team):
                         # on oublie pas de remettre la case à 0
                         TBL[position[0]][position[1]] = EMPTY
                         return True
-            elif tile_value in TeamNames and (tile_value % BLUE < team):  # on vérifie dans les deux sens
+            elif tile_value in TeamNames and (team - tile_value)%3 != 0:  # on vérifie dans les deux sens
                 TeamPos[team].remove(old_pos)
                 print(TeamNames[tile_value] + " ate " + TeamNames[team] + " at " + str(new_pos) + " !")
                 dead_players.append((old_pos[0], old_pos[1], TeamColors[team]))
