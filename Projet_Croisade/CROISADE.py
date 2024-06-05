@@ -228,9 +228,11 @@ def Affiche():
             yy = To(pos[1])
             e = 20
             color = TeamColors[team]
+            outline = color
             if boost_timer[team] > 0:
-                color = "yellow"
-            canvas.create_oval(xx - e, yy - e, xx + e, yy + e, fill=color)
+                outline = "yellow"
+            canvas.create_oval(xx - e, yy - e, xx + e, yy +
+                               e, fill=color, outline=outline)
             # on affiche le numéro du joueur
             canvas.create_text(xx, yy, text=str(positions.index(pos) + 1),
                                fill="white", font=("Purisa", 8))
@@ -391,7 +393,7 @@ def moveTeam(team):
             position[0] = new_pos[0]
             position[1] = new_pos[1]
 
-        # EatingBoost(team, position)
+        EatingBoost(team, position)
     boost_timer[team] -= 1
 
 
@@ -414,6 +416,11 @@ def checkCollision(old_pos, new_pos, team):
                 return True
         else:
             # on mange le boost et ça fait des effets à définir TODO
+            print("Boost eaten by " +
+                  TeamNames[team] + " at " + str(new_pos) + " !")
+            # on oublie pas de remettre la case à 0
+            TBL[new_pos[0]][new_pos[1]] = EMPTY
+
             pass
 
     return False
