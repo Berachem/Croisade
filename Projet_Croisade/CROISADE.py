@@ -68,8 +68,22 @@ def shuffleAllTeamPositions():
             TeamPos[team][i] = all_positions[index]
             index += 1
 
+# Fonction pour actualiser TBL
+def updateTBL():
+    # Vider les anciennes positions des équipes
+    for row in range(LARGEUR):
+        for col in range(HAUTEUR):
+            if TBL[row, col] in [RED, GREEN, BLUE]:
+                TBL[row, col] = EMPTY
+    
+    # Mettre à jour les nouvelles positions des équipes
+    for team, positions in TeamPos.items():
+        for pos in positions:
+            TBL[pos[0], pos[1]] = team
+
 # Appelez cette fonction avant le début de la partie
 shuffleAllTeamPositions()
+updateTBL()
 
 
 # placements des boosts
