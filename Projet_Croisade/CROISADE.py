@@ -239,6 +239,16 @@ def Affiche():
         canvas.create_line(x - half_size, y - half_size, x + half_size, y + half_size, fill=outline, width=EPAISS//2)
         canvas.create_line(x + half_size, y - half_size, x - half_size, y + half_size, fill=outline, width=EPAISS//2)
 
+    def DisplaySurvivorCircles():
+        x_start = 20
+        y_start = screenHeight - 20
+        r = 10
+        for team, positions in TeamPos.items():
+            color = TeamColors[team]
+            for i in range(len(positions)):
+                CreateCircle(x_start + i * (r * 2 + 5), y_start, r, color)
+            x_start += len(positions) * (r * 2 + 15)
+
     canvas.delete("all")
 
     for x in range(LARGEUR - 1):
@@ -279,45 +289,43 @@ def Affiche():
             if boost_timer[team] > 0:
                 # outline = "yellow"
                 pass
-            canvas.create_oval(xx - e, yy - e, xx + e, yy +
-                               e, fill=color, outline=outline)
+            canvas.create_oval(xx - e, yy - e, xx + e, yy + e, fill=color, outline=outline)
             # on affiche le numéro du joueur
-            canvas.create_text(xx, yy, text=str(positions.index(pos) + 1),
-                               fill="white", font=("Purisa", 8))
+            canvas.create_text(xx, yy, text=str(positions.index(pos) + 1), fill="white", font=("Purisa", 8))
 
     for x in range(LARGEUR):
         for y in range(HAUTEUR):
             xx = To(x)
             yy = To(y) - 11
             txt = TBL1[x][y]
-            canvas.create_text(xx, yy, text=txt, fill="red",
-                               font=("Purisa", 8))
+            canvas.create_text(xx, yy, text=txt, fill="red", font=("Purisa", 8))
 
     for x in range(LARGEUR):
         for y in range(HAUTEUR):
             xx = To(x) + 10
             yy = To(y)
             txt = TBL2[x][y]
-            canvas.create_text(
-                xx, yy, text=txt, fill="green", font=("Purisa", 8))
+            canvas.create_text(xx, yy, text=txt, fill="green", font=("Purisa", 8))
 
     for x in range(LARGEUR):
         for y in range(HAUTEUR):
             xx = To(x) - 10
             yy = To(y)
             txt = TBL3[x][y]
-            canvas.create_text(
-                xx, yy, text=txt, fill="blue", font=("Purisa", 8))
+            canvas.create_text(xx, yy, text=txt, fill="blue", font=("Purisa", 8))
 
     if PAUSE_FLAG:
         canvas.create_text(screeenWidth // 2, screenHeight - 50,
-                           text="UNPAUSE : PRESS SPACE", fill="red", font=PoliceTexte)
+                           text="Game paused", fill="red", font=PoliceTexte)
     elif END_FLAG:
+        winner_color = TeamColors[WINNER] if WINNER in TeamColors else "green"
         canvas.create_text(screeenWidth // 2, screenHeight - 50,
-                           text="FIN DE PARTIE : L'EQUIPE GAGNANTE EST " + WINNER, fill="green", font=PoliceTexte)
+                           text='' if WINNER is None else WINNER + " team wins !", fill=winner_color, font=PoliceTexte)
     else:
         canvas.create_text(screeenWidth // 2, screenHeight - 50,
-                           text="PAUSE : PRESS SPACE", fill="white", font=PoliceTexte)
+                           text="Game in progress...", fill="white", font=PoliceTexte)
+        
+    DisplaySurvivorCircles()
 
 
 AfficherPage(0)
