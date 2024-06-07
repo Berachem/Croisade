@@ -3,20 +3,19 @@ import tkinter as tk
 from tkinter import font as tkfont
 import numpy as np
 
+#PROGRAMME CROISADE :
+#Le but de ce programme est de simuler un combat entre tois factions
+#ayant chacune une stratégie et une enemi particulier
+#Il se base sur des algorithmes de plus cours chemin afin de faire évoluer les différentes équipes
+
+
 # Partie I : variables du jeu
-
-# Plan du labyrinthe
-# 0 vide
-# 1 mur
-# 2 boost
-
-
 def CreateArray(L):
     T = np.array(L, dtype=np.int32)
     T = T.transpose()  # ainsi, on peut écrire TBL[x][y]
     return T
 
-
+#Constantes de la carte 
 EMPTY = 0
 WALL = 1
 BOOST = 2
@@ -24,6 +23,7 @@ RED = 3
 GREEN = 4
 BLUE = 5
 
+#Carte de jeu
 TBL = CreateArray([
     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
     [1, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 4, 1],
@@ -39,18 +39,18 @@ TBL = CreateArray([
 
 HAUTEUR = TBL.shape[1]
 LARGEUR = TBL.shape[0]
+NEUTRAL_SPAWNS = [(9,6),(8,6),(10,6)]
 
+#variables d'équipes
 TeamColors = {RED: "coral", GREEN: "darkolivegreen1", BLUE: "cadetblue"}
 TeamNames = {RED: "RED", GREEN: "GREEN", BLUE: "BLUE"}
-
-# Initial positions for each team's players
 TeamPos = {
     BLUE: [[1, 1], [7, 3], [13, 9]],
     GREEN: [[LARGEUR - 2, 1], [5,9], [17, 7]],
     RED: [[10,1], [1,7], [12, HAUTEUR - 4]]
 }
 dead_players = []
-NEUTRAL_SPAWNS = [(4,9),(6,8),(6,10)]
+
 
 # Fonction pour mélanger les positions de toutes les équipes
 def shuffleAllTeamPositions():
@@ -66,30 +66,24 @@ def shuffleAllTeamPositions():
             TeamPos[team][i] = all_positions[index]
             index += 1
 
-# Fonction pour actualiser TBL
+# Fonction pour actualiser TBL avec les bonnes couleurs d'équipe au bon endroit
 def updateTBL():
-    # Vider les anciennes positions des équipes
     for row in range(LARGEUR):
         for col in range(HAUTEUR):
             if TBL[row, col] in [RED, GREEN, BLUE]:
                 TBL[row, col] = EMPTY
     
-    # Mettre à jour les nouvelles positions des équipes
     for team, positions in TeamPos.items():
         for pos in positions:
             TBL[pos[0], pos[1]] = team
 
-# Appelez cette fonction avant le début de la partie
+
 shuffleAllTeamPositions()
 updateTBL()
-
-
-
 
 # Cartes des plus courts chemins
 WALL_VALUE = 1000
 MAX_PATH_VALUE = 400  # le nombre de case dans la grille est le plus long chemin théorique
-
 
 def initPath(path, checked_value):
     for x in range(LARGEUR):
@@ -170,19 +164,16 @@ F.grid_columnconfigure(0, weight=1)
 ListePages = {}
 PageActive = 0
 
-
 def CreerUnePage(id):
     Frame = tk.Frame(F)
     ListePages[id] = Frame
     Frame.grid(row=0, column=0, sticky="nsew")
     return Frame
 
-
 def AfficherPage(id):
     global PageActive
     PageActive = id
     ListePages[id].tkraise()
-
 
 def WindowAnim():
     if LEAVE_FLAG:
@@ -203,18 +194,15 @@ canvas = tk.Canvas(Frame1, width=screeenWidth, height=screenHeight)
 canvas.place(x=0, y=0)
 canvas.configure(background='black')
 
-
 def To(coord):
     return coord * ZOOM + ZOOM
-
-
-
 
 def Affiche():
 
     def CreateCircle(x, y, r, coul):
         canvas.create_oval(x-r, y-r, x+r, y+r, fill=coul, width=0)
         
+    #fonction pour afficher les joueurs morts
     def CreateCross(x, y, size, color, outline):
         half_size = size / 2
         canvas.create_line(x - half_size, y - half_size, x + half_size, y + half_size, fill=color, width=EPAISS)
@@ -222,6 +210,7 @@ def Affiche():
         canvas.create_line(x - half_size, y - half_size, x + half_size, y + half_size, fill=outline, width=EPAISS//2)
         canvas.create_line(x + half_size, y - half_size, x - half_size, y + half_size, fill=outline, width=EPAISS//2)
 
+    #fonctions pour afficher le nombre de joueur en vie de chaque équipe
     def DisplaySurvivorCircles():
         x_start = 20
         y_start = screenHeight - 20
@@ -294,6 +283,7 @@ def Affiche():
             txt = TBL3[x][y]
             canvas.create_text(xx, yy, text=txt, fill="blue", font=("Purisa", 8))
 
+    #code pour afficher le statu de la partie en bas 
     if PAUSE_FLAG:
         canvas.create_text(screeenWidth // 2, screenHeight - 50,
                            text="Game paused", fill="red", font=PoliceTexte)
@@ -312,7 +302,7 @@ AfficherPage(0)
 
 # Partie III : Gestion de partie
 
-
+#fonction pour trier les movements possibles
 def PossibleMoves(pos, team):
     L = []
     x, y = pos
@@ -327,8 +317,7 @@ def PossibleMoves(pos, team):
     L.append((0, 0))  # les fuyards pourrais vouloir rester sur place
     return L
 
-
-
+#fonction d'actualisation de la carte des distances
 def ActualisePath(path):
     for x in range(1, LARGEUR - 1):
         for y in range(1, HAUTEUR - 1):
@@ -349,7 +338,7 @@ def ActualisePath(path):
                         path[x][y] = path[checkedX][checkedY] + 1
                         isModified = True
 
-
+#fonction qui actualise les distances des équipes
 def updateTeamDistances():
     global RED_PATH, GREEN_PATH, BLUE_PATH
     # reset distance
@@ -374,7 +363,7 @@ def updateTeamDistances():
                      if BLUE_PATH[x][y] != WALL_VALUE else "")
                      """
 
-
+#fonction qui choisis le meilleur mouvement en fonction de la stratégie de l'équipe
 def choose_best_move(team, pos, distance_map, worst_cost, compare):
     best_cost = worst_cost
     best_move = (0, 0)
@@ -386,15 +375,15 @@ def choose_best_move(team, pos, distance_map, worst_cost, compare):
             best_move = move
     return best_move
 
-
+#stratégie d'attaque
 def runForwardtheEnnemy(new_cost, best_cost):
     return new_cost < best_cost
 
-
+#stratégie de fuite
 def fleeFromTheEnnemy(new_cost, best_cost):
     return new_cost > best_cost
 
-
+#déplacement de chaque équipe
 def moveTeam(team):
     global TeamPos, TBL
 
@@ -425,6 +414,7 @@ def moveTeam(team):
             position[0] = new_pos[0]
             position[1] = new_pos[1]
 
+#vérification des colision avec d'autres joueurs ou avec un boost
 def checkCollision(old_pos, new_pos, team):
     global TeamPos, TeamNames, dead_players
 
@@ -463,8 +453,7 @@ def checkCollision(old_pos, new_pos, team):
 
     return False
 
-
-
+#vérification de la condition de victoire
 def checkWin():
     global END_FLAG, WINNER
 
@@ -481,8 +470,6 @@ def checkWin():
 
 
 iteration = 0
-
-
 def PlayOneTurn():
     global iteration
 
@@ -497,8 +484,6 @@ def PlayOneTurn():
 
         checkWin()
         updateTeamDistances()
-
-    # faudra actualiser la carte en fonction des mouvements de tout le monde de toute façon
 
     Affiche()
 
