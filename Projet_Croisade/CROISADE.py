@@ -23,16 +23,15 @@ BOOST = 2
 RED = 3
 GREEN = 4
 BLUE = 5
-NEUTRAL_SPAWN = 6 
 
 TBL = CreateArray([
     [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
     [1, 3, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 4, 0, 4, 1],
     [1, 0, 3, 1, 0, 0, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 0, 0, 0, 1],
     [1, 0, 0, 1, 1, 2, 1, 0, 0, 0, 0, 0, 0, 2, 0, 1, 0, 4, 0, 1],
-    [1, 0, 0, 1, 0, 0, 1, 0, 0, 6, 0, 1, 0, 1, 1, 1, 1, 1, 0, 1],
+    [1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1, 1, 1, 1, 1, 0, 1],
     [1, 0, 0, 0, 0, 0, 1, 0, 1, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 1],
-    [1, 0, 1, 1, 1, 1, 1, 0, 6, 1, 6, 0, 0, 1, 0, 0, 1, 0, 0, 1],
+    [1, 0, 1, 1, 1, 1, 1, 0, 0, 1, 0, 0, 0, 1, 0, 0, 1, 0, 0, 1],
     [1, 0, 0, 0, 1, 0, 2, 0, 0, 0, 0, 0, 3, 1, 0, 1, 1, 0, 0, 1],
     [1, 5, 0, 0, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 0, 0, 1, 0, 0, 1],
     [1, 5, 0, 5, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
@@ -41,8 +40,6 @@ TBL = CreateArray([
 HAUTEUR = TBL.shape[1]
 LARGEUR = TBL.shape[0]
 
-boost_duration = 16  # durée de l'effet du boost
-boost_timer = {RED: 0, GREEN: 0, BLUE: 0}
 TeamColors = {RED: "coral", GREEN: "darkolivegreen1", BLUE: "cadetblue"}
 TeamNames = {RED: "RED", GREEN: "GREEN", BLUE: "BLUE"}
 
@@ -53,6 +50,7 @@ TeamPos = {
     RED: [[10,1], [1,7], [12, HAUTEUR - 4]]
 }
 dead_players = []
+NEUTRAL_SPAWNS = [(4,9),(6,8),(6,10)]
 
 # Fonction pour mélanger les positions de toutes les équipes
 def shuffleAllTeamPositions():
@@ -86,21 +84,7 @@ shuffleAllTeamPositions()
 updateTBL()
 
 
-# placements des boosts
 
-# utile ? on pourrait faire disparaitre les boost directement du TBL ?
-
-
-def PlacementsBoost():
-    BOOSTS = np.zeros(TBL.shape, dtype=np.int32)
-    for x in range(LARGEUR):
-        for y in range(HAUTEUR):
-            if TBL[x][y] == BOOST:
-                BOOSTS[x][y] = 1
-    return BOOSTS
-
-
-BOOSTS = PlacementsBoost()
 
 # Cartes des plus courts chemins
 WALL_VALUE = 1000
@@ -227,7 +211,6 @@ def To(coord):
 
 
 def Affiche():
-    global boost_timer
 
     def CreateCircle(x, y, r, coul):
         canvas.create_oval(x-r, y-r, x+r, y+r, fill=coul, width=0)
@@ -269,7 +252,7 @@ def Affiche():
 
     for x in range(LARGEUR):
         for y in range(HAUTEUR):
-            if BOOSTS[x][y] == 1:
+            if TBL[x][y] == BOOST:
                 xx = To(x)
                 yy = To(y)
                 e = 10
@@ -286,9 +269,6 @@ def Affiche():
             e = 20
             color = TeamColors[team]
             outline = color
-            if boost_timer[team] > 0:
-                # outline = "yellow"
-                pass
             canvas.create_oval(xx - e, yy - e, xx + e, yy + e, fill=color, outline=outline)
             # on affiche le numéro du joueur
             canvas.create_text(xx, yy, text=str(positions.index(pos) + 1), fill="white", font=("Purisa", 8))
@@ -348,13 +328,6 @@ def PossibleMoves(pos, team):
     return L
 
 
-def EatingBoost(team, position):
-    global TeamPos, boost_timer
-    x, y = position
-    if BOOSTS[x][y] == 1:
-        BOOSTS[x][y] = 0
-        boost_timer[team] = boost_duration
-
 
 def ActualisePath(path):
     for x in range(1, LARGEUR - 1):
@@ -388,10 +361,11 @@ def updateTeamDistances():
     ActualisePath(RED_PATH)
     ActualisePath(GREEN_PATH)
     ActualisePath(BLUE_PATH)
-
+    
+    """ # infos pour la table des distances
     for x in range(LARGEUR):
         for y in range(HAUTEUR):
-            """
+           
             SetInfo1(x, y, RED_PATH[x][y] if RED_PATH[x]
                      [y] != WALL_VALUE else "")
             SetInfo2(x, y, GREEN_PATH[x][y]
@@ -422,7 +396,7 @@ def fleeFromTheEnnemy(new_cost, best_cost):
 
 
 def moveTeam(team):
-    global TeamPos, boost_timer, TBL
+    global TeamPos, TBL
 
     # red -> green -> blue
     if team == RED:
@@ -451,10 +425,6 @@ def moveTeam(team):
             position[0] = new_pos[0]
             position[1] = new_pos[1]
 
-        EatingBoost(team, position)
-    boost_timer[team] -= 1
-
-
 def checkCollision(old_pos, new_pos, team):
     global TeamPos, TeamNames, dead_players
 
@@ -477,14 +447,14 @@ def checkCollision(old_pos, new_pos, team):
                 dead_players.append((old_pos[0], old_pos[1], TeamColors[team]))
                 return True
         else:
-            # on mange le boost et ça fait des effets à définir TODO
-            print("Boost eaten by " +
-                  TeamNames[team] + " at " + str(new_pos) + " !")
+            # on mange le boost
+            print("Boost eaten by " + TeamNames[team] + " at " + str(new_pos) + " !")
             # on oublie pas de remettre la case à 0
             TBL[new_pos[0]][new_pos[1]] = EMPTY
+          
 
-            # on fait spawn un joueur de l'équipe qui a mangé le boost dans une case NEUTRAL_SPAWN (6) aléatoire de la carte
-            possible_spawn = [(x, y) for x in range(LARGEUR) for y in range(HAUTEUR) if TBL[x][y] == NEUTRAL_SPAWN]
+            # on fait spawn un joueur de l'équipe qui a mangé le boost dans une case NEUTRAL_SPAWN aléatoire de la carte
+            possible_spawn = [(x, y) for (x,y) in NEUTRAL_SPAWNS if TBL[x][y] == EMPTY]
             if possible_spawn:
                 spawn_pos = random.choice(possible_spawn)
                 TBL[spawn_pos[0]][spawn_pos[1]] = team
