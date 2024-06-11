@@ -9,13 +9,13 @@ import numpy as np
 #Il se base sur des algorithmes de plus cours chemin afin de faire évoluer les différentes équipes
 
 
-# Partie I : variables du jeu
+#========== Partie I : variables du jeu ========== 
 def CreateArray(L):
     T = np.array(L, dtype=np.int32)
     T = T.transpose()  # ainsi, on peut écrire TBL[x][y]
     return T
 
-#Constantes de la carte 
+#***** Constantes de la carte *****
 EMPTY = 0
 WALL = 1
 BOOST = 2
@@ -65,6 +65,9 @@ def shuffleAllTeamPositions():
         for i in range(len(TeamPos[team])):
             TeamPos[team][i] = all_positions[index]
             index += 1
+    
+    #actualisation de la place des équipes sur le TBL
+    updateTBL() 
 
 # Fonction pour actualiser TBL avec les bonnes couleurs d'équipe au bon endroit
 def updateTBL():
@@ -78,10 +81,7 @@ def updateTBL():
             TBL[pos[0], pos[1]] = team
 
 
-shuffleAllTeamPositions()
-updateTBL()
-
-# Cartes des plus courts chemins
+#***** Cartes des plus courts chemins *****
 WALL_VALUE = 1000
 MAX_PATH_VALUE = 400  # le nombre de case dans la grille est le plus long chemin théorique
 
@@ -101,7 +101,7 @@ RED_PATH = initPath(np.empty([LARGEUR, HAUTEUR]), RED)
 GREEN_PATH = initPath(np.empty([LARGEUR, HAUTEUR]), GREEN)
 BLUE_PATH = initPath(np.empty([LARGEUR, HAUTEUR]), BLUE)
 
-# Debug info affichage
+#***** Debug info affichage *****
 LTBL = 20
 TBL1 = [["" for i in range(LTBL)] for j in range(LTBL)]
 TBL2 = [["" for i in range(LTBL)] for j in range(LTBL)]
@@ -130,7 +130,7 @@ def SetInfo3(x, y, info):
     TBL3[x][y] = info
 
 
-# Partie II : AFFICHAGE
+#========== Partie II : AFFICHAGE ==========
 ZOOM = 40
 EPAISS = 8
 screeenWidth = (LARGEUR + 1) * ZOOM
@@ -140,6 +140,7 @@ Window = tk.Tk()
 Window.geometry(str(screeenWidth) + "x" + str(screenHeight))
 Window.title("Jeu de Croisade")
 
+#variables pour la gestion de l'etat de la partie
 PAUSE_FLAG = False
 LEAVE_FLAG = False
 END_FLAG = False
@@ -300,7 +301,7 @@ def Affiche():
 
 AfficherPage(0)
 
-# Partie III : Gestion de partie
+#========== Partie III : Gestion de partie ==========
 
 #fonction pour trier les movements possibles
 def PossibleMoves(pos, team):
@@ -469,6 +470,7 @@ def checkWin():
                 WINNER = "GREEN"
 
 
+#========== Partie IV : Main ==========
 iteration = 0
 def PlayOneTurn():
     global iteration
@@ -488,7 +490,8 @@ def PlayOneTurn():
     Affiche()
 
 
-# Initial update of distances
-updateTeamDistances()
+#Initialisation 
+shuffleAllTeamPositions() #départs aléatoires des équipes              
+updateTeamDistances()     # Update des distances initial
 
 Window.mainloop()
