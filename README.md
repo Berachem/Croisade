@@ -1,11 +1,11 @@
-# Combat de Factions
+# Croisade 🔴⚔️🟢⚔️🔵
 ![image](https://github.com/Berachem/Croisade/assets/61350744/98e175d1-4e97-4dd3-adda-ba9f3e270f7e)
 
 Réalisé par Berachem MARKRIA & Joshua LEMOINE ❤
 
 <center>
   <video width="480" height="480" controls>
-    <source src="https://igadvisory.fr/opendata/Croisade%_Trailer.mp4" type="video/mp4">
+    <source src="https://igadvisory.fr/opendata/Croisade_Trailer.mp4" type="video/mp4">
   </video>
 </center>
 
