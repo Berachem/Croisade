@@ -1,7 +1,7 @@
 # Croisade 🔴⚔️🟢⚔️🔵
 
 <center>
-  <video width="640" height="480" controls>
+  <video width="853" height="640" controls>
     <source src="https://igadvisory.fr/opendata/Croisade_Trailer.mp4" type="video/mp4">
   </video>
 </center>
